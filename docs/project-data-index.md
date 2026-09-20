@@ -41,16 +41,16 @@
 | WSL `Ubuntu-22.04` | `已核查`：发行版在运行 | 本轮 `wsl --list --verbose` |
 | ROS 包 | `已核查`：可列出 `turtlebot3_gazebo`、`turtlebot3_teleop`、`slam_toolbox`、`nav2_map_server`、`turtlebot3_navigation2`、`moveit_ros_move_group` 等 | 本轮在 WSL source Humble 后执行 `ros2 pkg list`；只证明包可发现 |
 | `~/ros2_ws` | `已核查`：目录存在，但只有 `.vscode`，没有 `src` | 本轮 `ls -la /home/yyyyyc001/ros2_ws`；与旧环境记录中的“已创建第一个包”不一致 |
-| Gazebo 中出现 TurtleBot3 | `待验证` | 现有操作清单的 M1 未打勾；本轮没有启动 GUI 或确认小车 |
+| Gazebo 中出现 TurtleBot3 | `文档记载`：另一工作记录称用户已确认 M1 小车正常显示 | `plan/log.md` 的 2026-09-20 M1 条目；本轮未独立查看 GUI，保留该证据边界 |
 | SLAM 地图 | `待验证` | 尚无本轮 RViz 截图和地图文件验收 |
 | 学长源码与配置 | `待获取` | 当前文件夹未见 ROS 工程包；旧交接说明也记为未拿到 |
 | 真机联调 | `待验证` | 尚未核对设备、驱动、接线和安全操作边界 |
 
-**近期顺序**：先确认 M1（机器人生成、`/scan` 与 `/odom` 有数据），再用 SLAM Toolbox 做 M2 建图与地图保存。导航、视觉和机械臂按后续独立目标推进。
+**近期顺序**：M1 已有用户确认记录；开始 M2 前仍需核查 `/scan`、`/odom` 与 TF，再用 SLAM Toolbox 做建图与地图保存。导航、视觉和机械臂按后续独立目标推进。
 
 ## 4. 多 Agent 并行边界
 
-一个 target 由一个负责人拥有；多个 Agent 可分别做只读研究。需要写文件时，先在各自 `plan/<date-goal-slug>/plan.md` 声明 owned 文件。共享文件由整合负责人协调，避免同时修改。
+一个 target 由一个负责人拥有；多个 Agent 可分别做只读研究。**以下是可能的工作流，不预设固定 Agent 分工**。需要写文件时，先在各自 `plan/<date-goal-slug>/plan.md` 声明 owned 文件。共享文件由当次目标的整合负责人协调，避免同时修改。
 
 | 工作流 | 可独立交付的内容 | 共享契约 / 交接要求 |
 |---|---|---|
