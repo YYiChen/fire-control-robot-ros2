@@ -41,7 +41,7 @@
 2. **代理 TUN / 全局模式会挡 HTTPS**（做 TLS 中间人 → 证书错）→ **联网装东西前先关代理直连**。
 3. 代码放 **WSL 内 `~/`**，**别放 `/mnt/c`**（跨文件系统编译极慢）。
 4. VS Code 开发类扩展装 **WSL 侧**；工作区用 **Remote-WSL** 打开（**勿用** `\\wsl.localhost\` UNC 路径）。
-5. **AI 的沙箱拦截 `wsl.exe`** → AI **无法直接执行 WSL 命令**；必须**让用户回贴命令输出或截图**来判断。
+5. **（本会话 / 本 Agent）沙箱拦截 `wsl.exe`** → 本 Agent **无法直接执行 WSL 命令**，需**让用户回贴输出或截图**判断。⚠️ 已发现**其他 Agent 可直连 WSL**（见 `docs/project-data-index.md`）→ **能力因会话而异，使用前先复验**。
 6. Ubuntu 后台 `unattended-upgrades` 会占 apt 锁 → **等锁释放**（`while sudo fuser /var/lib/dpkg/lock-frontend ...`）。
 7. 用户环境**有代理**；`ping` 通不代表 HTTPS 通（MITM 会拦）。
 

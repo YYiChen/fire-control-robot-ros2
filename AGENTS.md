@@ -20,7 +20,7 @@
 2. **代理 TUN / 全局模式会挡 HTTPS**（TLS 中间人 → 证书错）→ **联网安装前先关代理直连**。
 3. 代码放 **WSL 内 `~/`**，**不要放 `/mnt/c`**（跨文件系统编译极慢）。
 4. VS Code 开发类扩展装 **WSL 侧**；工作区用 **Remote-WSL** 打开（**勿用** `\\wsl.localhost\` UNC）。
-5. **AI 无法直接执行 WSL 命令**：AI 沙箱拦截 `wsl.exe` → 必须**让用户回贴命令输出 / 截图**再判断。
+5. **（本会话）AI 无法直接执行 WSL 命令**：本 Agent 的沙箱拦截 `wsl.exe` → 需**用户回贴输出 / 截图**。⚠️ **其他 Agent / 会话可能可直连 WSL**（见 `docs/project-data-index.md`）→ **能力因会话而异，先复验**。
 6. 运行 `turtlebot3*` 相关命令前，确保该终端有 `TURTLEBOT3_MODEL=burger`（否则世界加载但机器人不 spawn）。
 
 ## 三、本项目验证命令（validation 用）

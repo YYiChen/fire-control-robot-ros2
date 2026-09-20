@@ -50,3 +50,15 @@
   - **M2（建图）命令尚未运行**。
 - **commit status**：首次提交（`chore: init repo ...`）
 - **待办**：跑建图 4 条命令（`turtlebot3_world` → `cartographer` → `teleop` → `map_saver`），产出并验证 `~/my_map.yaml` + `~/my_map.pgm`。
+
+## 2026-09-20 —— 多 Agent 协同发现 + git 启用（复核）
+
+- **target**：启用 git；复核已有的多 Agent 产物。
+- **changed areas**：
+  - **启用 git**：`git init`（`main`），首次提交 `1a7b505`（32 文件，含文档 / 论文 / plan / experience）。
+  - 发现本目录**已有另一 Agent 的产物**：`docs/project-data-index.md`、`plan/2026-09-20-project-data-index/`（**非本 Agent 创建**；随之入库，但其 dirty 变化归该 Agent，本 Agent 不编辑）。
+- **validation / 核查差异**（来源：`docs/project-data-index.md`）：
+  - `~/ros2_ws` **只有 `.vscode`、无 `src`** → 旧记录"已创建第一个包"**不成立**（`create_first_ros2_pkg.sh` 未真正跑过）。
+  - **另一 Agent 可直连运行 WSL 命令**（`wsl --list --verbose`、`ros2 pkg list`、`ls -la ~/ros2_ws`），而**本 Agent 沙箱拦截 `wsl.exe`** → 能力因会话而异（已在 `AGENT.md` / `AGENTS.md` 加限定）。
+- **commit status**：`1a7b505`（首次）；另有 `plan/2026-09-20-project-data-index/` 的 dirty 归另一 Agent。
+- **备注**：另一 Agent 索引称"本目录不是 Git 仓库"——**已被本次 `git init` 取代（过时）**。
