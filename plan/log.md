@@ -77,3 +77,10 @@
 - **changed areas**：保存 `~/maps/turtlebot3_world_2026-09-20_01` 的 YAML/PGM 导航地图，以及 `.posegraph`/`.data` 位姿图；WSL `slow_teleop` 默认直线速度 0.05→0.15 m/s、保留 0.35 秒自动停车，并加入参数服务处理；新增 `config/slam_toolbox_fast.yaml`，下次启动 SLAM 可使用 1.0 秒地图更新、0.1 米位移阈值、0.2 弧度转向阈值和 0.2 秒最小扫描间隔。
 - **validation performed**：当前 `/map` 由 `slam_toolbox` 发布；`map_saver_cli` 报告 112×103、0.05 m/像素并成功写文件；PGM 文件检查一致；位姿图服务结果 `0` 且两文件存在；当前 `/scan` 约 5 Hz、Gazebo 截图实时倍率约 1.0，原参数实际为 5 秒/0.5 米/0.5 弧度/0.5 秒；新 YAML 解析及参数值检查成功；遥控包重新编译成功，隔离 ROS 域内节点显示 0.15 m/s 且参数查询成功。实际提速驾驶与新 SLAM 配置的实时效果待用户试用。
 - **commit status**：WSL 包独立 Git 提交 `e041ad0`；本项目计划与日志单独提交。
+
+## 2026-09-20 —— 修复消防控制室近似场景
+
+- **target**：修复另一 Agent 创建的未跟踪 Gazebo 场景，确保 Burger 可在各分区通行，并提供与当前建图流程一致的启动说明。
+- **changed areas**：在 `gazebo_scene/fire_control_room.world` 增加前侧 1 米入口、移开堵门的 `equip_a` 与内墙重叠的 `equip_b`；在 launch 中使用同目录 world、默认 Burger、120 秒生成等待及可选 `gui:=false`；README 改为 SLAM Toolbox + RViz + `slow_teleop` + 独立地图文件名。world 和 launch 已复制到 WSL `~/my_worlds/`。
+- **validation performed**：`gz sdf -k` 通过；ROS2 launch 参数解析通过；按 0.12 米车体余量的平面栅格检查显示从 `(0.5,0.5)` 可达左上、右上、右下与前侧入口，设备与墙无重叠；隔离 `ROS_DOMAIN_ID=98` 和 Gazebo master 端口 11356 下完整运行 launch，`SpawnEntity` 成功、模型列表含所有场景物体与 `burger`、`/scan` 与 `/odom` 各有 1 个发布者、里程计 `(0.50007,0.499995)` 且姿态近直立。隔离测试已停止，原有 Gazebo 进程仍运行。真人驾驶/实际建图尚待用户试用。
+- **commit status**：本 target 提交见 Git 历史。

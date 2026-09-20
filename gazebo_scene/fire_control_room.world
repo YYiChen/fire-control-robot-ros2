@@ -1,0 +1,153 @@
+<?xml version="1.0" ?>
+<!--
+  消防控制室近似场景（对照论文 2D 栅格建图结果搭建）
+  房间外框约 8m(x) × 5m(y)，墙高 2.5m，墙厚 0.15m
+  含：前侧入口、内部分隔墙（带门洞）、2 根圆柱、若干设备箱体
+  用法：gazebo fire_control_room.world
+  微调：在 Gazebo 里拖动或用文本改各 <model> 的 <pose>
+  ⚠️ 尺寸/布局为"近似"，不是精确复刻，按需调整
+-->
+<sdf version="1.6">
+  <world name="fire_control_room">
+
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://ground_plane</uri></include>
+
+    <!-- ================= 外墙 ================= -->
+    <!-- 前侧入口 x=0.8~1.8，净宽 1.0m -->
+    <model name="wall_south_left"><static>true</static>
+      <pose>0.40 0.075 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.80 0.15 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.80 0.15 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="wall_south_right"><static>true</static>
+      <pose>4.90 0.075 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>6.20 0.15 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>6.20 0.15 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="wall_north"><static>true</static>
+      <pose>4.0 4.925 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>8.30 0.15 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>8.30 0.15 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="wall_west"><static>true</static>
+      <pose>0.075 2.5 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.15 5.0 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 5.0 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="wall_east"><static>true</static>
+      <pose>7.925 2.5 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.15 5.0 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 5.0 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- ========== 中部横墙（y≈2.4，留门洞 x 1.4~2.2，净宽 0.8m）========== -->
+    <model name="wall_mid_a"><static>true</static>
+      <pose>0.70 2.40 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>1.40 0.15 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.40 0.15 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="wall_mid_b"><static>true</static>
+      <pose>2.90 2.40 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>1.40 0.15 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.40 0.15 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- ===== 右上竖向分隔墙（x≈3.6，y 2.4~5）===== -->
+    <model name="wall_v_upper"><static>true</static>
+      <pose>3.60 3.70 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.15 2.60 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 2.60 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- ==== 右下竖向分隔墙（x≈5.8，y 0~2.4，留门洞 y 1.0~1.6）==== -->
+    <model name="wall_v_lower_a"><static>true</static>
+      <pose>5.80 0.50 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.15 1.00 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 1.00 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="wall_v_lower_b"><static>true</static>
+      <pose>5.80 2.00 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.15 0.80 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.80 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- ===== 右下横墙（y≈1.6，x 5.8~8）===== -->
+    <model name="wall_lower_h"><static>true</static>
+      <pose>6.90 1.60 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>2.20 0.15 2.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>2.20 0.15 2.5</size></box></geometry></visual>
+      </link>
+    </model>
+
+    <!-- ================= 圆柱（柱）================= -->
+    <model name="pillar_1"><static>true</static>
+      <pose>1.20 3.60 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><cylinder><radius>0.35</radius><length>2.5</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.35</radius><length>2.5</length></cylinder></geometry></visual>
+      </link>
+    </model>
+    <model name="pillar_2"><static>true</static>
+      <pose>2.00 1.20 1.25 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><cylinder><radius>0.35</radius><length>2.5</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.35</radius><length>2.5</length></cylinder></geometry></visual>
+      </link>
+    </model>
+
+    <!-- ================= 设备 / 家具（箱体）================= -->
+    <model name="equip_a"><static>true</static>
+      <!-- 从左上房间门前移开，避免把 0.8m 门洞挤窄 -->
+      <pose>0.75 1.70 0.40 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.80 0.50 0.80</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.80 0.50 0.80</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="equip_b"><static>true</static>
+      <!-- 与 y=1.6 的内墙分开 -->
+      <pose>6.60 3.00 0.40 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.60 1.00 0.80</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.60 1.00 0.80</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="equip_c"><static>true</static>
+      <pose>4.60 4.40 0.40 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>1.00 0.50 0.80</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.00 0.50 0.80</size></box></geometry></visual>
+      </link>
+    </model>
+    <model name="equip_d"><static>true</static>
+      <pose>7.40 0.60 0.40 0 0 0</pose>
+      <link name="l">
+        <collision name="c"><geometry><box><size>0.60 0.60 0.80</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.60 0.60 0.80</size></box></geometry></visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
