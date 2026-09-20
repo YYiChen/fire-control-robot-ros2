@@ -63,3 +63,10 @@
 - **commit status**：`1a7b505`（首次）；另有 `plan/2026-09-20-project-data-index/` 的 dirty 归另一 Agent。
 - **备注**：另一 Agent 索引称"本目录不是 Git 仓库"——**已被本次 `git init` 取代（过时）**。
 - **多 Agent 说明（用户澄清）**：本项目可能**多 Agent 参与**，**能力因会话而异**（**本 Agent 被拦 `wsl.exe`**，其他 Agent 可能可直连 WSL）；**用户不预设分区、按需使用** → **不擅自划分职责**。已按中性描述更新 `AGENT.md` / `AGENTS.md`。（先前一版曾误写为"执行 / 文档分工"，**已更正**。）
+
+## 2026-09-20 —— 低速键盘遥控包
+
+- **target**：在 TurtleBot3 仿真建图阶段提供易停车的低速遥控。
+- **changed areas**：在 WSL `~/ros2_ws/src/slow_teleop/` 新建独立 ROS2 Python 包；WASD 控制，默认直线 0.05 m/s、原地转向 0.35 rad/s，最后一次按键 0.35 秒后自动发布零速度；空格急停、Q 退出。包内 `README.md` 记录用法。
+- **validation performed**：`python3 -m py_compile`、`colcon build --packages-select slow_teleop --symlink-install` 成功；`ros2 pkg executables slow_teleop` 返回 `slow_teleop slow_teleop`；交互终端启动并以 Q 退出，未发送移动按键；`/cmd_vel` 运行前无其他发布者。实际驾驶效果待用户试用。
+- **commit status**：WSL 包独立 Git 提交 `53f96be`；本项目计划与日志单独提交。
