@@ -67,8 +67,8 @@
 1. 学长工程的只读目录清单：`package.xml`、`launch/`、`config/`、URDF/Xacro、Gazebo world、模型、训练权重及依赖说明。
 2. 可复现的 M1、M2 验收材料：启动日志、节点/话题/TF 检查、Gazebo/RViz 截图、地图文件。
 3. 设备与仿真的对应表：真实底盘、雷达、相机、机械臂的接口与仿真替代物。
-4. 后续建立 Git 仓库时的分支、二进制大文件和备份策略；目前此目录不是 Git 仓库，不把“已提交”写入日志。
+4. Git 分支、二进制大文件和备份策略仍待明确。整理期间本目录已由另一项工作初始化为 Git 仓库；既有资料进入初始提交，不等于各实验已验收。
 
 ## 6. 工作流来源
 
-参考 [`chenzc24/agent-workflow-kernel`](https://github.com/chenzc24/agent-workflow-kernel)：按目标执行 `plan → implementation → validation → log → commit`；跨目标经验由人触发、Agent 协助起草。本项目尚未启用 Git，因此暂以计划、文件范围和事实记录管理工作；Git 启用后再补上差异审查与提交环节。
+参考 [`chenzc24/agent-workflow-kernel`](https://github.com/chenzc24/agent-workflow-kernel)：按目标执行 `plan → implementation → validation → log → commit`；跨目标经验由人触发、Agent 协助起草。Git 已在本次整理期间启用；各目标仍须分别审查差异、记录验证范围并只提交自己拥有的文件。

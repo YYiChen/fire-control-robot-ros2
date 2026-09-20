@@ -45,6 +45,19 @@
 6. Ubuntu 后台 `unattended-upgrades` 会占 apt 锁 → **等锁释放**（`while sudo fuser /var/lib/dpkg/lock-frontend ...`）。
 7. 用户环境**有代理**；`ping` 通不代表 HTTPS 通（MITM 会拦）。
 
+---
+
+## 4·补、多 Agent 分工（本项目**有意为之**）
+
+本项目**刻意多 Agent 协同**，因为**各 Agent 沙箱能力不同**：
+
+| 角色 | 能力 | 职责 |
+|---|---|---|
+| **执行 / 核查 Agent**（可直连 WSL） | ✅ 跑 `wsl.exe` / WSL 内命令 | ROS2 / Gazebo 实跑、取真实输出、核查与验收 |
+| **文档 / 设计 Agent**（本 Agent，被拦 `wsl.exe`） | ❌ 不能执行 WSL；✅ 读写文件、整理文档 | 论文整理、plan / log / experience、技术方案、脚本、代码设计 |
+
+**规则**：执行/验证交给可直连 WSL 的一方；本 Agent 专注文档/设计；通过**共享目录 + git** 交换产物；**运行状态以有证据的执行结果为准**，本 Agent 不凭空断言。
+
 ## 5. 文件索引（本目录）
 
 | 文件 | 内容 |

@@ -6,7 +6,7 @@
 
 ## Dirty-State Note
 
-本目录目前不是 Git 仓库。开始本目标时，`AGENTS.md`、`plan/README.md` 与 `plan/target-plan.template.md` 在本轮阅读期间出现，视为其他工作者拥有；本目标不编辑这些文件。
+开始本目标时本目录不是 Git 仓库。工作期间，另一项工作创建了 `main` 上的初始提交 `1a7b505`，其中包含本目标当时已经写入的索引与计划。`AGENTS.md`、`plan/README.md` 与 `plan/target-plan.template.md` 也在本轮阅读期间出现，视为其他工作者拥有；本目标不编辑这些文件。当前其他文件的 dirty 状态不影响本目标 owned 文件。
 
 ## Owned Files
 
@@ -36,7 +36,7 @@
 
 - 核对索引中列出的每个本地文件路径是否存在。
 - 核对“已核查”结论对应本轮只读命令输出。
-- 检查本目标只新增 owned 文件；本目录未启用 Git，无法运行 `git diff --check` 或提交。
+- 检查本目标只修改 owned 文件；Git 启用后运行 `git diff --check`、`git status --short --branch` 并复审目标文件差异。
 - 在本目标目录记录事实结果；共享的 `plan/log.md` 已被另一目标声明为 owned，本轮不并发编辑。
 
 这些检查覆盖本次纯文档整理的直接风险：路径错误、状态误标和越权改动。
@@ -45,4 +45,6 @@
 
 - 旧环境文档与当前工作区目录不一致；是否形成可复用经验由用户决定。
 
-## Co
+## Commit Intent
+
+本目标不初始化仓库；Git 已由另一项工作启用。将本目标剩余改动单独提交为 `docs: align ROS project data index with current Git state`，不包含其他目标的 dirty 文件。

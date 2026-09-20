@@ -62,3 +62,4 @@
   - **另一 Agent 可直连运行 WSL 命令**（`wsl --list --verbose`、`ros2 pkg list`、`ls -la ~/ros2_ws`），而**本 Agent 沙箱拦截 `wsl.exe`** → 能力因会话而异（已在 `AGENT.md` / `AGENTS.md` 加限定）。
 - **commit status**：`1a7b505`（首次）；另有 `plan/2026-09-20-project-data-index/` 的 dirty 归另一 Agent。
 - **备注**：另一 Agent 索引称"本目录不是 Git 仓库"——**已被本次 `git init` 取代（过时）**。
+- **分工确认（用户澄清）**：这是**用户有意为之**的多 Agent 协同——**该 Agent 能直连 WSL（负责执行 / 核查）**，**本 Agent 被沙箱拦（负责文档 / 设计）**。已写入 `AGENT.md` / `AGENTS.md` 作为项目约定。
