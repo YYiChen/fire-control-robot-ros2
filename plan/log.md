@@ -70,3 +70,10 @@
 - **changed areas**：在 WSL `~/ros2_ws/src/slow_teleop/` 新建独立 ROS2 Python 包；WASD 控制，默认直线 0.05 m/s、原地转向 0.35 rad/s，最后一次按键 0.35 秒后自动发布零速度；空格急停、Q 退出。包内 `README.md` 记录用法。
 - **validation performed**：`python3 -m py_compile`、`colcon build --packages-select slow_teleop --symlink-install` 成功；`ros2 pkg executables slow_teleop` 返回 `slow_teleop slow_teleop`；交互终端启动并以 Q 退出，未发送移动按键；`/cmd_vel` 运行前无其他发布者。实际驾驶效果待用户试用。
 - **commit status**：WSL 包独立 Git 提交 `53f96be`；本项目计划与日志单独提交。
+
+## 2026-09-20 —— 建图保存、遥控速度与刷新调优
+
+- **target**：保存当前扫图，并提高后续遥控与地图刷新体验。
+- **changed areas**：保存 `~/maps/turtlebot3_world_2026-09-20_01` 的 YAML/PGM 导航地图，以及 `.posegraph`/`.data` 位姿图；WSL `slow_teleop` 默认直线速度 0.05→0.15 m/s、保留 0.35 秒自动停车，并加入参数服务处理；新增 `config/slam_toolbox_fast.yaml`，下次启动 SLAM 可使用 1.0 秒地图更新、0.1 米位移阈值、0.2 弧度转向阈值和 0.2 秒最小扫描间隔。
+- **validation performed**：当前 `/map` 由 `slam_toolbox` 发布；`map_saver_cli` 报告 112×103、0.05 m/像素并成功写文件；PGM 文件检查一致；位姿图服务结果 `0` 且两文件存在；当前 `/scan` 约 5 Hz、Gazebo 截图实时倍率约 1.0，原参数实际为 5 秒/0.5 米/0.5 弧度/0.5 秒；新 YAML 解析及参数值检查成功；遥控包重新编译成功，隔离 ROS 域内节点显示 0.15 m/s 且参数查询成功。实际提速驾驶与新 SLAM 配置的实时效果待用户试用。
+- **commit status**：WSL 包独立 Git 提交 `e041ad0`；本项目计划与日志单独提交。
