@@ -121,3 +121,10 @@
 - **diagnosis evidence**：原运行实测 `/scan`=14.9 Hz、`/odom`=29.3 Hz、RTF=0.985；15 Hz 配置已未被 SLAM 节流。后期才发生的地图整体畸变与 `do_loop_closing=true` 的全局回环优化时机一致，是高优先级逻辑嫌疑；地图刷新间隔只影响发布/显示，不是扫描匹配频率。15 Hz 模型中蓝色激光可视化开启，30 Hz 模型已关闭以避免 GUI 负担。传感器高频测试中的 RTF=0.978，未见实时性积压。
 - **validation performed**：新模型 `gz sdf -k` 通过，launch 通过 `py_compile` 和 `--show-args`，姿态锁插件 `colcon build` 成功且链接库无缺失依赖；隔离 ROS 域 98 / Gazebo 端口 11356 完整启动，Burger 成功生成、`/scan` 实测 29.35 Hz、静止 `/odom` 的 z≈0.01 且 roll/pitch 接近 0；高频 SLAM 节点实际返回 0.03 秒、0.02 m、0.03 rad、loop closing=false、0.5 秒。隔离实例已正常停止。碰撞过程中的横向接触与长期地图稳定性仍须在用户场景驾驶中复验。
 - **commit status**：WSL `slow_teleop` 提交 `639639a`；WSL 平面插件独立仓库提交 `be0dab6`；本项目计划和记录随本 target 根仓库提交保存。
+
+## 2026-09-21 —— A* 导航配置与 B 样条路径诊断
+
+- **target**：为已保存的 lab room 地图建立论文导航结构的下一步学习材料：实际 Nav2 导航明确使用 A*；B 样条先作为不控制底盘的路径对比输出。
+- **changed areas**：新增 `navigation_profiles/install_lab_room_nav2_profile.py`，在 WSL 中复制当前安装的 TurtleBot3 Burger 参数文件，并只将 `planner_server → GridBased → use_astar` 改为 `true`，不修改 `/opt/ros`；新增 `bspline_path_diagnostic.py`，订阅 `/plan` 并发布三次均匀 B 样条的 `/plan_bspline`；新增 `navigation_profiles/README.md`，记录安装、启动、RViz 对比和接入安全门槛；新增本 target plan。
+- **validation performed**：两个 Python 文件均通过 `python -m py_compile`；A* 安装器的 `--help` 参数解析通过；`git diff --check` 通过。脚本特意基于 WSL 实际安装的 `burger.yaml` 生成配置，运行时参数加载、`use_astar=True` 和 `/plan_bspline` 发布仍须在用户的 WSL 内验证。
+- **commit status**：待本 target 根仓库提交。
