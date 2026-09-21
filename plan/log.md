@@ -97,3 +97,11 @@
 - **changed areas**：本项目 `plan/log.md`；WSL `slow_teleop` 默认参数与 README 同步更新为线速度 0.375 m/s、角速度 0.525 rad/s。
 - **validation performed**：数值由既有默认值（0.15 / 0.35）按倍率计算得出；`python3 -m py_compile` 和 `colcon build --packages-select slow_teleop --symlink-install` 成功；隔离 ROS 域内启动节点显示 0.38 m/s、0.53 rad/s，参数服务实际返回 0.375、0.525、0.35。实际驾驶手感待用户试用。
 - **commit status**：WSL 包与本项目记录均已提交。
+
+## 2026-09-21 —— 遥控速度再翻倍与激光量程修正
+
+- **target**：按用户要求将当前 slow_teleop 默认线速度、角速度各再翻倍，并排查自建 lab_room 扫图时的报错。
+- **changed areas**：WSL slow_teleop 默认线速度 0.375 → 0.75 m/s、默认角速度 0.525 → 1.05 rad/s；同步放宽参数合法范围、README；slam_toolbox_fast.yaml 的激光量程从不符合 Burger 雷达的 0.0–20.0 m 改为实际 /scan 发布范围 0.12–3.5 m。
+- **diagnosis evidence**：SLAM 日志无运行时异常，只有旧量程配置触发的两条警告；RViz 日志出现 WSL OpenGL/GLSL sampler 纹理兼容性错误，但地图仍连续接收尺寸更新。碰撞后地图畸变与轮式里程计的位姿突变相符；该判断基于运行日志和当时的 /odom，未在受控碰撞试验中复现。
+- **validation performed**：python3 -m py_compile 通过；colcon build --packages-select slow_teleop --symlink-install 成功；隔离 ROS_DOMAIN_ID=98 启动节点并查询到 linear_speed=0.75、angular_speed=1.05、hold_seconds=0.35；新量程配置文本断言通过；两个 Git 仓库均执行 git diff --check。
+- **commit status**：WSL 遥控包提交 `2938956`；本项目计划和记录随本次根仓库提交保存。
