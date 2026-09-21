@@ -105,3 +105,10 @@
 - **diagnosis evidence**：SLAM 日志无运行时异常，只有旧量程配置触发的两条警告；RViz 日志出现 WSL OpenGL/GLSL sampler 纹理兼容性错误，但地图仍连续接收尺寸更新。碰撞后地图畸变与轮式里程计的位姿突变相符；该判断基于运行日志和当时的 /odom，未在受控碰撞试验中复现。
 - **validation performed**：python3 -m py_compile 通过；colcon build --packages-select slow_teleop --symlink-install 成功；隔离 ROS_DOMAIN_ID=98 启动节点并查询到 linear_speed=0.75、angular_speed=1.05、hold_seconds=0.35；新量程配置文本断言通过；两个 Git 仓库均执行 git diff --check。
 - **commit status**：WSL 遥控包提交 `2938956`；本项目计划和记录随本次根仓库提交保存。
+
+## 2026-09-21 —— Burger 仿真雷达提升至 15 Hz
+
+- **target**：保持用户要求的遥控速度（线速度 0.75 m/s、转向 1.05 rad/s），将自建 `lab_room` 场景可用 Burger 的仿真激光扫描频率从 5 Hz 提升为 15 Hz。
+- **changed areas**：在 WSL 用户目录创建 `~/my_models/turtlebot3_burger_15hz/model.sdf`，仅将 `hls_lfcd_lds` 的 `<update_rate>` 改为 `15`；创建 `~/my_worlds/lab_room_15hz.launch.py`，从该用户模型文件生成机器人。未改动 `/opt/ros` 的系统安装包，也未改动项目中用户未跟踪的 `gazebo_scene/lab_room.*`。
+- **validation performed**：系统 Burger SDF 已确认原值仍为 5 Hz；新 SDF 的 15 Hz 标记恰有一处，`gz sdf -k` 通过；新 launch 的 `python3 -m py_compile` 通过，`ros2 launch ~/my_worlds/lab_room_15hz.launch.py --show-args` 成功解析。运行中的 Gazebo 仍加载旧模型，实际 `/scan`=15 Hz 需要切换到新 launch 后验证。
+- **commit status**：本项目计划与记录随本 target 根仓库提交保存；WSL 用户目录下的模型和启动文件不在 Git 工作区。
