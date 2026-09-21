@@ -109,6 +109,6 @@
 ## 2026-09-21 —— Burger 仿真雷达提升至 15 Hz
 
 - **target**：保持用户要求的遥控速度（线速度 0.75 m/s、转向 1.05 rad/s），将自建 `lab_room` 场景可用 Burger 的仿真激光扫描频率从 5 Hz 提升为 15 Hz。
-- **changed areas**：在 WSL 用户目录创建 `~/my_models/turtlebot3_burger_15hz/model.sdf`，仅将 `hls_lfcd_lds` 的 `<update_rate>` 改为 `15`；创建 `~/my_worlds/lab_room_15hz.launch.py`，从该用户模型文件生成机器人。未改动 `/opt/ros` 的系统安装包，也未改动项目中用户未跟踪的 `gazebo_scene/lab_room.*`。
-- **validation performed**：系统 Burger SDF 已确认原值仍为 5 Hz；新 SDF 的 15 Hz 标记恰有一处，`gz sdf -k` 通过；新 launch 的 `python3 -m py_compile` 通过，`ros2 launch ~/my_worlds/lab_room_15hz.launch.py --show-args` 成功解析。运行中的 Gazebo 仍加载旧模型，实际 `/scan`=15 Hz 需要切换到新 launch 后验证。
-- **commit status**：本项目计划与记录随本 target 根仓库提交保存；WSL 用户目录下的模型和启动文件不在 Git 工作区。
+- **changed areas**：在 WSL 用户目录创建 `~/my_models/turtlebot3_burger_15hz/model.sdf`，仅将 `hls_lfcd_lds` 的 `<update_rate>` 改为 `15`；创建 `~/my_worlds/lab_room_15hz.launch.py`，从该用户模型文件生成机器人；WSL `slow_teleop/config/slam_toolbox_fast.yaml` 的 `minimum_time_interval` 从 `0.2` 改为 `0.06` 秒，使 SLAM 不再把 15 Hz 扫描限速回约 5 Hz。未改动 `/opt/ros` 的系统安装包，也未改动项目中用户未跟踪的 `gazebo_scene/lab_room.*`。
+- **validation performed**：系统 Burger SDF 已确认原值仍为 5 Hz；新 SDF 的 15 Hz 标记恰有一处，`gz sdf -k` 通过；新 launch 的 `python3 -m py_compile` 通过，`ros2 launch ~/my_worlds/lab_room_15hz.launch.py --show-args` 成功解析；新 SLAM 间隔的文本断言与 WSL Git 检查通过。运行中的 Gazebo 仍加载旧模型，实际 `/scan`=15 Hz 需要切换到新 launch 后验证。
+- **commit status**：WSL `slow_teleop` 配置提交 `a7dfaae`；本项目计划与记录随本 target 根仓库提交保存；WSL 用户目录下的模型和启动文件不在 Git 工作区。

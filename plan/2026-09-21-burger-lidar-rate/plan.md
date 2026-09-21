@@ -22,6 +22,7 @@
 - plan/log.md
 - WSL: ~/my_models/turtlebot3_burger_15hz/model.sdf
 - WSL: ~/my_worlds/lab_room_15hz.launch.py
+- WSL: ~/ros2_ws/src/slow_teleop/config/slam_toolbox_fast.yaml
 
 ## Read-Only Files
 
@@ -41,13 +42,15 @@
 
 1. Copy the system Burger SDF into a user-owned model file and set only its lidar sensor update_rate from 5 Hz to 15 Hz.
 2. Create a separate launch file that spawns this SDF in the existing lab_room world while keeping the normal Burger state publisher.
-3. Validate SDF syntax and static launch imports without stopping the active simulation.
-4. Record the new startup and verification boundary in plan/log.md and commit project records.
+3. Reduce SLAM's minimum scan-processing interval from 0.2 s to 0.06 s so it can consume each 15 Hz scan.
+4. Validate SDF syntax, YAML values, and static launch imports without stopping the active simulation.
+5. Record the new startup and verification boundary in plan/log.md and commit project records.
 
 ## Validation
 
 - gz sdf -k ~/my_models/turtlebot3_burger_15hz/model.sdf
 - assert one lidar update_rate is 15 and the source system file is unchanged
+- assert minimum_time_interval is 0.06 s
 - python3 -m py_compile ~/my_worlds/lab_room_15hz.launch.py
 - git diff --check and git status --short --branch in this project
 
@@ -62,4 +65,3 @@ These checks prove model syntax and launch-file syntax. The 15 Hz runtime topic 
 ```text
 docs: add high-rate lidar launch record
 ```
-
