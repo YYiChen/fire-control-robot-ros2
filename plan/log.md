@@ -84,3 +84,16 @@
 - **changed areas**：在 `gazebo_scene/fire_control_room.world` 增加前侧 1 米入口、移开堵门的 `equip_a` 与内墙重叠的 `equip_b`；在 launch 中使用同目录 world、默认 Burger、120 秒生成等待及可选 `gui:=false`；README 改为 SLAM Toolbox + RViz + `slow_teleop` + 独立地图文件名。world 和 launch 已复制到 WSL `~/my_worlds/`。
 - **validation performed**：`gz sdf -k` 通过；ROS2 launch 参数解析通过；按 0.12 米车体余量的平面栅格检查显示从 `(0.5,0.5)` 可达左上、右上、右下与前侧入口，设备与墙无重叠；隔离 `ROS_DOMAIN_ID=98` 和 Gazebo master 端口 11356 下完整运行 launch，`SpawnEntity` 成功、模型列表含所有场景物体与 `burger`、`/scan` 与 `/odom` 各有 1 个发布者、里程计 `(0.50007,0.499995)` 且姿态近直立。隔离测试已停止，原有 Gazebo 进程仍运行。真人驾驶/实际建图尚待用户试用。
 - **commit status**：本 target 提交见 Git 历史。
+
+## 2026-09-21 —— 遥控速度再调（线 ×2.5 / 角 ×1.5）
+
+- **target**：按用户要求，在**当前默认速度**基础上提高遥控速度——**移动（线）速度 ×2.5、转向（角）速度 ×1.5**。
+- **原有基础（依据既有记录 / 包 README）**：slow_teleop 当前默认 = 线速度 **0.15 m/s**、角速度 **0.35 rad/s**。
+- **计算结果**：
+  - 线速度 `0.15 × 2.5 = ` **0.375 m/s**
+  - 角速度 `0.35 × 1.5 = ` **0.525 rad/s**
+- **用法（启动指令）**：
+  `ros2 run slow_teleop slow_teleop --ros-args -p linear_speed:=0.375 -p angular_speed:=0.525`
+- **changed areas**：本项目 `plan/log.md`；WSL `slow_teleop` 默认参数与 README 同步更新为线速度 0.375 m/s、角速度 0.525 rad/s。
+- **validation performed**：数值由既有默认值（0.15 / 0.35）按倍率计算得出；`python3 -m py_compile` 和 `colcon build --packages-select slow_teleop --symlink-install` 成功；隔离 ROS 域内启动节点显示 0.38 m/s、0.53 rad/s，参数服务实际返回 0.375、0.525、0.35。实际驾驶手感待用户试用。
+- **commit status**：WSL 包与本项目记录均已提交。
