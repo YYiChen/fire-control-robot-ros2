@@ -112,3 +112,12 @@
 - **changed areas**：在 WSL 用户目录创建 `~/my_models/turtlebot3_burger_15hz/model.sdf`，仅将 `hls_lfcd_lds` 的 `<update_rate>` 改为 `15`；创建 `~/my_worlds/lab_room_15hz.launch.py`，从该用户模型文件生成机器人；WSL `slow_teleop/config/slam_toolbox_fast.yaml` 的 `minimum_time_interval` 从 `0.2` 改为 `0.06` 秒，使 SLAM 不再把 15 Hz 扫描限速回约 5 Hz。未改动 `/opt/ros` 的系统安装包，也未改动项目中用户未跟踪的 `gazebo_scene/lab_room.*`。
 - **validation performed**：系统 Burger SDF 已确认原值仍为 5 Hz；新 SDF 的 15 Hz 标记恰有一处，`gz sdf -k` 通过；新 launch 的 `python3 -m py_compile` 通过，`ros2 launch ~/my_worlds/lab_room_15hz.launch.py --show-args` 成功解析；新 SLAM 间隔的文本断言与 WSL Git 检查通过。运行中的 Gazebo 仍加载旧模型，实际 `/scan`=15 Hz 需要切换到新 launch 后验证。
 - **commit status**：WSL `slow_teleop` 配置提交 `a7dfaae`；本项目计划与记录随本 target 根仓库提交保存；WSL 用户目录下的模型和启动文件不在 Git 工作区。
+
+## 2026-09-21 —— 保存障碍物地图、30 Hz 平面约束建图配置
+
+- **target**：保存用户补充障碍物后的当前地图；保持 0.75 m/s、1.05 rad/s 遥控速度，提供 30 Hz 仿真扫描、滚转/俯仰锁定和后期地图异常的诊断配置。
+- **map artifact**：已保存 `~/maps/lab_room_obstacles_2026-09-21.yaml` 与 `.pgm`。map_saver 报告图像为 198 × 139、0.05 m/像素；两文件存在并且 YAML 指向对应 PGM。
+- **changed areas**：WSL 新增独立 `planar_lock_plugin`，每个 Gazebo 更新周期锁定机器人高度、roll、pitch，保留 X/Y/yaw；新增 `~/my_models/turtlebot3_burger_30hz/model.sdf`，激光 `update_rate=30` 并关闭仅用于显示的蓝色射线；新增 `~/my_worlds/lab_room_30hz.launch.py`，通过 `GAZEBO_PLUGIN_PATH` 加载该插件；WSL `slow_teleop` 新增 `config/slam_toolbox_high_rate.yaml`，使用 0.03 秒扫描间隔、0.02 m / 0.03 rad 阈值、0.5 秒地图刷新，并在诊断配置中关闭回环优化。
+- **diagnosis evidence**：原运行实测 `/scan`=14.9 Hz、`/odom`=29.3 Hz、RTF=0.985；15 Hz 配置已未被 SLAM 节流。后期才发生的地图整体畸变与 `do_loop_closing=true` 的全局回环优化时机一致，是高优先级逻辑嫌疑；地图刷新间隔只影响发布/显示，不是扫描匹配频率。15 Hz 模型中蓝色激光可视化开启，30 Hz 模型已关闭以避免 GUI 负担。传感器高频测试中的 RTF=0.978，未见实时性积压。
+- **validation performed**：新模型 `gz sdf -k` 通过，launch 通过 `py_compile` 和 `--show-args`，姿态锁插件 `colcon build` 成功且链接库无缺失依赖；隔离 ROS 域 98 / Gazebo 端口 11356 完整启动，Burger 成功生成、`/scan` 实测 29.35 Hz、静止 `/odom` 的 z≈0.01 且 roll/pitch 接近 0；高频 SLAM 节点实际返回 0.03 秒、0.02 m、0.03 rad、loop closing=false、0.5 秒。隔离实例已正常停止。碰撞过程中的横向接触与长期地图稳定性仍须在用户场景驾驶中复验。
+- **commit status**：WSL `slow_teleop` 提交 `639639a`；WSL 平面插件独立仓库提交 `be0dab6`；本项目计划和记录随本 target 根仓库提交保存。
