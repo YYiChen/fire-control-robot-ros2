@@ -1,0 +1,6 @@
+joy_linux_node:
+  ros__parameters:
+    dev: "/dev/sony_ps5"
+    autorepeat_rate: 20.0
+    coalesce_interval_ms: 0
+

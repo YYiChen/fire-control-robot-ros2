@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- <xacro:include xmlns:xacro="http://www.ros.org/wiki/xacro"> -->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- 材质定义 -->
+  <material name="light_white">
+    <color rgba="1.0 1.0 1.0 1.0"/>
+  </material>
+  <material name="dirty_white">
+    <color rgba="0.9 0.9 0.9 0.6"/>
+  </material>
+  <material name="silver_white">
+    <color rgba="0.8 0.8 0.8 1.0"/>
+  </material>
+  <material name="silver_gray">
+    <color rgba="0.6 0.6 0.6 1.0"/>
+  </material>
+
+  <!-- lift_base_link -->
+  <link name="lift_base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.2 0.2 0.005" />
+      </geometry>
+      <material name="light_white" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.2 0.2 0.005" /> <!-- 或使用 mesh -->
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- lift_shell_link -->
+  <link name="lift_shell_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.144 0.144 0.37"/>
+      </geometry>
+      <material name="dirty_white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.144 0.144 0.37"/> <!-- 或使用 mesh -->
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="lift_base_to_shell" type="fixed">
+    <parent link="lift_base_link"/>
+    <child link="lift_shell_link"/>
+    <origin xyz="0 0 0.18625" rpy="0 0 0"/>
+  </joint>
+
+  <!-- lift_link1 -->
+  <link name="lift_link1">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.133 0.133 0.20"/>
+      </geometry>
+      <material name="silver_gray"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.133 0.133 0.20"/> <!-- 或使用 mesh -->
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- <joint name="lift_base_to_lift1" type="prismatic">
+    <parent link="lift_base_link"/>
+    <child link="lift_link1"/>
+    <origin xyz="0 0 0.2825"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0.0" upper="0.2" effort="10.0" velocity="0.1"/>
+  </joint> -->
+  <joint name="lift_base_to_lift1" type="fixed">
+    <parent link="lift_base_link"/>
+    <child link="lift_link1"/>
+    <origin xyz="0 0 0.2825" rpy="0 0 0"/>
+    <!-- <axis xyz="0 0 1"/> -->
+    <!-- <limit lower="0.0" upper="0.2" effort="10.0" velocity="0.1"/> -->
+  </joint>
+
+  <!-- lift_link2 -->
+  <link name="lift_link2">
+    <visual>
+      <geometry>
+        <box size="0.122 0.122 0.20"/>
+      </geometry>
+      <material name="silver_white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.122 0.122 0.20"/> <!-- 或使用 mesh -->
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- <joint name="lift1_to_lift2" type="prismatic">
+    <parent link="lift_link1"/>
+    <child link="lift_link2"/>
+    <origin xyz="0 0 0.005"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0.0" upper="0.2" effort="10.0" velocity="0.1"/>
+  </joint> -->
+
+  <joint name="lift1_to_lift2" type="fixed">
+    <parent link="lift_link1"/>
+    <child link="lift_link2"/>
+    <origin xyz="0 0 0.005" rpy="0 0 0"/>
+    <!-- <axis xyz="0 0 1"/> -->
+    <!-- <limit lower="0.0" upper="0.2" effort="10.0" velocity="0.1"/> -->
+  </joint>
+
+  <!-- Top platform -->
+  <link name="lift_top_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.20 0.20 0.005"/>
+      </geometry>
+      <material name="light_white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.20 0.20 0.005"/> <!-- 或使用 mesh -->
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="lift_base_to_top" type="fixed">
+    <parent link="lift_link2"/>
+    <child link="lift_top_link"/>
+    <origin xyz="0 0 0.1025" rpy="0 0 0"/>
+  </joint>
+
+</robot>

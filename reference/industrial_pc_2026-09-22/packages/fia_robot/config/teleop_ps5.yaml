@@ -1,0 +1,40 @@
+teleop_node:
+  ros__parameters:
+    axis_linear:
+      x: 1    # 摇杆轴编号（如 1 表示左摇杆上下）
+      y: -1
+      z: -1
+    axis_angular:
+      pitch: -1
+      roll: -1
+      yaw: 3  # 摇杆轴编号（如 0 表示左摇杆左右）
+    enable_button: 5 # 只有按住该按钮时，才发送速度指令（如 PS5 手柄的 R1 键）
+    enable_turbo_button: -1
+    frame: teleop_twist_joy
+    inverted_reverse: false
+    publish_stamped_twist: false
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 100
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    require_enable_button: true # 是否启用该“激活键”机制
+    scale_angular:
+      pitch: 0.0
+      roll: 0.0
+      yaw: 0.5 # 缩放角速度的比例（正值为左转，负值为右转）
+    scale_angular_turbo:
+      pitch: 0.0
+      roll: 0.0
+      yaw: 1.0
+    scale_linear:
+      x: 1.0  # 缩放线速度的比例（正值为前进，负值为反向）
+      y: 0.0
+      z: 0.0
+    scale_linear_turbo:
+      x: 1.5
+      y: 0.0
+      z: 0.0
+    use_sim_time: false

@@ -1,0 +1,16 @@
+twist_mux_node:
+  ros__parameters:
+    locks:
+      pause:
+        topic   : pause_navigation
+        timeout : 0.0
+        # Same priority as joystick control, so it'll not block it.
+        priority: 50
+      loop_closure:
+        topic   : stop_closing_loop
+        timeout : 0.0
+        priority: 60
+      joystick :
+        topic   : joy_priority
+        timeout : 0.0
+        priority: 50

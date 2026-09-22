@@ -1,0 +1,32 @@
+{
+
+    "robot_sn": "FIA_R001",
+    "way_points": {
+        "001": { "goal_type": "RECHARGE",    "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "002": { "goal_type": "TO_CRUISE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "003": { "goal_type": "TO_CRUISE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "004": { "goal_type": "CRUISE_START","x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "005": { "goal_type": "CRUISE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "006": { "goal_type": "CRUISE",   "x": 1.2, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": true, "task_id_bind": "[1, 2, 3]" },
+        "007": { "goal_type": "CRUISE",   "x": 1.2, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": -1.0}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "008": { "goal_type": "CRUISE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": -1.0}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "009": { "goal_type": "TO_CHARGE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "010": { "goal_type": "TO_CHARGE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "011": { "goal_type": "RECHARGE",    "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false}
+    }
+}
+
+{
+
+    "robot_sn": "FIA_R001",
+    "way_points": {
+        "001": { "goal_type": "RECHARGE",     "x": -1.017, "y": 0.714, "quaternion": {"x": 0.000, "y": 0.000, "z": 0.9948177505426318, "w": -0.1016742012769126}, "has_task": false},
+        "002": { "goal_type": "TO_CRUISE",    "x": -1.002, "y": 0.723, "quaternion": {"x": 0.000, "y": 0.000, "z": 0.9522465286536274, "w": 0.3053302288786953}, "has_task": false}, 
+        "003": { "goal_type": "CRUISE_START", "x": -1.002, "y": 0.723, "quaternion": {"x": 0.000, "y": 0.000, "z": 0.9522465286536274, "w": 0.3053302288786953}, "has_task": false},
+        "004": { "goal_type": "CRUISE",       "x": -1.433, "y": 1.040, "quaternion": {"x": 0.000, "y": 0.000, "z": 0.9601159336821935, "w": 0.2796022065177060}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "005": { "goal_type": "CRUISE",       "x": -1.434, "y": 1.060, "quaternion": {"x": 0.000, "y": 0.000, "z": 0.4817183755765116, "w": 0.8763260846465355}, "has_task": true, "task_id_bind": "[1, 2, 3]" },
+        "006": { "goal_type": "CRUISE",       "x": -1.432, "y": 1.030, "quaternion": {"x": 0.000, "y": 0.000, "z": -0.3010695381982329, "w": 0.9536021881104839}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "007": { "goal_type": "CRUISE",       "x": -1.011, "y": 0.718, "quaternion": {"x": 0.000, "y": 0.000, "z": -0.2763823934172696, "w": 0.9610477473096442}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "008": { "goal_type": "TO_CHARGE",    "x": -1.017, "y": 0.714, "quaternion": {"x": 0.000, "y": 0.000, "z": 0.9948177505426318, "w": -0.1016742012769126}, "has_task": false}
+    }
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="YH_FIA_ROO1">
+
+  <!-- Module addition -->
+  <xacro:include filename="base.urdf.xacro"/>            <!-- robot body base urdf-->
+  <xacro:include filename="lift_platform.urdf.xacro"/>   <!-- Lifting platform urdf -->
+  <!--xacro:include filename="mechanical_arm.urdf.xacro"/-->  <!-- mechanical arm urdf -->
+ 
+  <link name="base_footprint"/>
+  <!-- Connect base link and base footprint link. -->
+  <joint name="base_to_footprint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Connect the Lifting platform and the robot. -->
+  <joint name="base_to_lift" type="fixed">
+    <parent link="base_link"/>
+    <child link="lift_base_link"/>
+    <origin xyz="-0.1307 0 0.243" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Connect the Lifting platform and the robotic arm. -->
+  <!-- <joint name="base_to_arm" type="fixed">
+    <parent link="lift_top_link"/>
+    <child link="arm_base_link"/>
+    <origin xyz="0 0 0.0125" rpy="0 0 0"/>
+  </joint> -->
+  
+</robot>

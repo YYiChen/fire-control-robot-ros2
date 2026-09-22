@@ -1,0 +1,20 @@
+{
+
+    "robot_sn": "FIA_R001",
+    "way_points": {
+        "001": { "goal_type": "RECHARGE",    "x": -2.215, "y": -0.062, "quaternion": {"x":0.0, "y": 0.0, "z": 0.7103700579829049, "w": 0.7038283744787249}, "has_task": false},
+        "002": { "goal_type": "TO_CRUISE",    "x": -2.215, "y": 0.3063, "quaternion": {"x":0.0, "y": 0.0, "z": 0.7103700579829049, "w": 0.7038283744787249}, "has_task": false},
+        "003": { "goal_type": "TO_CRUISE",    "x": -2.215, "y": 0.3063, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "004": { "goal_type": "TO_CRUISE",    "x": -1.191, "y": 0.4628, "quaternion": {"x":0.0, "y": 0.0, "z": 0.08905707487403278, "w": 0.996026524453481}, "has_task": false},
+        "005": { "goal_type": "CRUISE_START","x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "006": { "goal_type": "CRUISE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "007": { "goal_type": "CRUISE",   "x": 1.2, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": true, "task_id_bind": "[1, 2, 3]" },
+        "008": { "goal_type": "CRUISE",   "x": 1.2, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": -1.0}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "009": { "goal_type": "CRUISE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": -1.0}, "has_task": false, "task_id_bind": "[1, 2, 3]" },
+        "010": { "goal_type": "TO_CHARGE",   "x": 0.0, "y": 0.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "011": { "goal_type": "TO_CHARGE",    "x": -1.191, "y": 0.4628, "quaternion": {"x":0.0, "y": 0.0, "z": -0.9936824735584655, "w": 0.11222807911895064}, "has_task": false},
+        "012": { "goal_type": "TO_CHARGE",    "x": -2.215, "y": 0.3063, "quaternion": {"x":0.0, "y": 0.0, "z": -1.0, "w": 0}, "has_task": false},
+        "013": { "goal_type": "TO_CHARGE",    "x": -2.215, "y": 0.3063, "quaternion": {"x":0.0, "y": 0.0, "z": -0.7103700579829049, "w": 0.7038283744787249}, "has_task": false},
+        "014": { "goal_type": "TO_CHARGE",   "x": -2.215, "y": -0.062, "quaternion": {"x":0.0, "y": 0.0, "z": -0.7096184579274992, "w": 0.7045861509912028}, "has_task": false}
+    }
+}

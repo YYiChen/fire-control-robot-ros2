@@ -1,0 +1,15 @@
+{
+
+    "robot_sn": "FIA_R001",
+    "way_points": {
+        "001": { "goal_type": "RECHARGE",    "x": 0.0, "y": 0.0, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "002": { "goal_type": "TO_CRUISE",   "x": 0.0, "y": 0.0, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "003": { "goal_type": "TO_CRUISE",   "x": 0.0, "y": 0.0, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "004": { "goal_type": "CRUISE_START","x": 0.0, "y": 0.0, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "005": { "goal_type": "CRUISE",      "x": 0.0, "y": 0.0, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "006": { "goal_type": "CRUISE",      "x": 2.5, "y": 3.2, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": true, "task_id_bind": [1, 2, 3] },
+        "007": { "goal_type": "TO_CHARGE",   "x": 5.0, "y": 0.1, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": true, "task_id_bind": [1, 2, 3] },
+        "008": { "goal_type": "TO_CHARGE",   "x": 5.0, "y": 0.1, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false},
+        "009": { "goal_type": "RECHARGE",    "x": 5.0, "y": 0.1, "quaternion": {"x":0.0, "y": 0.0, "z": 0.0, "w": 1.0}, "has_task": false}
+    }
+}

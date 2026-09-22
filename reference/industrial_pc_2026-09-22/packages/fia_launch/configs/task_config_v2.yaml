@@ -1,0 +1,164 @@
+# Robot Task Config yaml v2.1 (2025-08)
+
+# 全局配置
+global:
+  charge_pose: [0, 0, 0, 0, 0, 0, 1]  # 充电点位姿态（地图坐标系）
+  default_lift_height: 200                 # 默认升降台高度（单位：mm）
+  # arm_start_pose: [0.056142, 0.0, 0.21319, 2.326e-06, 0.67561, -4.9949e-06, 0.73726]    # 机械臂初始位姿态 (基坐标系)
+  # arm_start_pose: [0.05623, -0.00012, 0.21321, 0.00044, 0.67599, -0.00107, 0.73691]
+  arm_start_pose: [0.05613, 0.00004, 0.21327, -0.00026, 0.67558, 0.00028, 0.73728]
+  default_button_hover_distance: 0.145  # 默认机械臂末端到到按键的停靠距离（单位：m）
+  default_button_press_distance: 0.022      # 默认机械臂末端到到按键的按压距离（单位：m）
+
+# 任务点位列表
+task_points:
+  - id: 1                                  # 点位ID
+    nav_pose: [0, 0, 0, 0, 0, 0, 1]    # 导航目标姿态（地图坐标系）
+    FACP_model: "JB-TG-HJ9000"             # 消防主机型号
+    task_sequence:                            # 任务步骤配置
+      - task_type: "lift_control"
+        description: "将升降台升到任务点指定高度"
+        parameters:
+          lift_height: "150"              # 升降台高度（单位：mm）
+      - task_type: "aruco_localization"
+        description: "移动机械臂到Aruco码上方, 检测Aruco码位姿"
+        parameters:
+          # capture_pose: [0.028793, -0.1981, 0.18088, 0.49384, 0.50477, -0.46812, 0.53121]     # AR码拍摄机械臂姿态（基坐标系）
+          # capture_pose: [0.010346, -0.26543, 0.22663, 0.48209, 0.49903, -0.49909, 0.5191]
+          # capture_pose: [0.0040731, -0.14089, 0.2069, 0.46468, 0.4767, -0.51969, 0.53549]
+          # capture_pose: [0.31446, 0.055293, 0.18572, -0.05938, 0.66472, 0.065053, 0.74189]
+          # capture_pose: [0.21869, -0.0096332, 0.23857, 0.015006, 0.68161, -0.016104, 0.73138]  # 工控机
+          # capture_pose: [0.32094, -0.0024163, 0.16945, 0.0026279, 0.6866, -0.0027337, 0.72703]   # 重复定位
+          # capture_pose: [0.291773, -0.010863, 0.160636, -0.01041, 0.7139504, -0.0056998, 0.700095]
+          # capture_pose: [0.23661, 0.012156, 0.21189, -0.015427, 0.69179, 0.018542, 0.7217]
+          # [0.214, 0.024, 0.210, -0.0345, 0.682, 0.0322, 0.730]
+          capture_pose: [0.21376, 0.02412, 0.21029, -0.03456, 0.68164, 0.03224, 0.73016]
+          # capture_pose: [0.23661, 0.012156, 0.21189, -0.015427, 0.69179, 0.018542, 0.7217] # AR码拍摄机械臂姿态（基坐标系）
+          marker_id: 582                       # AR码ID（用于匹配）
+          aruco_hover_distance: "0.30"                 # 机械臂末端到目标距离（单位：m）
+          capture_offset: "0.05"          # 相机拍摄偏移值，末端执行器与相机偏移（单位：m）
+
+      # - task_type: "initialize_system"
+      #   description: "设备初始化"
+      #   parameters:
+
+      # - task_type: "adjust_button_position"
+      #   parameters:
+      #     button_region_id: "1"
+      # - task_type: "adjust_button_position"
+      #   parameters:
+      #     button_region_id: "2"
+      # - task_type: "adjust_button_position"
+      #   parameters:
+      #     button_region_id: "3"
+      
+      # - task_type: "adjust_button_position"
+      #   parameters:
+      #     button_region_id: "6"  # 替换为你需要微调的按键区域 ID
+
+      # - task_type: "adjust_button_position"
+      #   parameters:
+      #     button_region_id: "15"
+      # - task_type: "adjust_button_position"
+      #   parameters:
+      #     button_region_id: "16"
+      # - task_type: "adjust_button_position"
+      #   parameters:
+      #     button_region_id: "17"
+      
+          
+      # - task_type: "handle_alarm"
+      #   description: "报警处理任务"
+      #   parameters:
+      #     screen_hover_distance: "0.28"          # 机械臂末端到屏幕距离（单位：m）
+      #     led_hover_distance: "0.28"          # 机械臂末端到LED距离（单位：m）
+      #     key_hover_distance: "0.3"     # 机械臂末端到键允许区域距离（单位：m）
+      #     key_pick_distance: "0.18"     # 机械臂末端到键允许区域抓取距离（单位：m）
+      #     open_position: "0.015"          # 夹爪张开位置（单位：m）
+      #     close_position: "0.01"          # 夹爪闭合位置（单位：m）
+      #     capture_offset: "0.02"
+      #     1"<redacted>"              # 密码
+
+      # - task_type: "routine_patrol"
+      #   description: "日常巡检任务"
+      #   parameters:
+      #     # led_hover_distance: "0.14508"
+      #     led_hover_distance: "0.24"          # 机械臂末端到LED距离（单位：m）
+      #     capture_screenshot: true           # 是否截图保存
+
+      #     screen_hover_distance: "0.28"          # 机械臂末端到屏幕距离（单位：m）
+      #     key_hover_distance: "0.3"     # 机械臂末端到键允许区域距离（单位：m）
+      #     key_pick_distance: "0.18"     # 机械臂末端到键允许区域抓取距离（单位：m）
+      #     open_position: "0.015"          # 夹爪张开位置（单位：m）
+      #     close_position: "0.01"          # 夹爪闭合位置（单位：m）
+      #     capture_offset: "0.02"
+      #     1"<redacted>"              # 密码
+      
+      # - task_type: "lift_control"
+      #   description: "将升降台升到任务点指定高度"
+      #   parameters:
+      #     lift_height: "105"              # 升降台高度（单位：mm）
+      
+      # - task_type: "aruco_localization"
+      #   description: "移动机械臂到Aruco码上方, 检测Aruco码位姿"
+      #   parameters:
+      #     capture_pose: [0.23661, 0.012156, 0.21189, -0.015427, 0.69179, 0.018542, 0.7217] # AR码拍摄机械臂姿态（基坐标系）
+      #     marker_id: 582                       # AR码ID（用于匹配）
+      #     aruco_hover_distance: "0.25"                 # 机械臂末端到目标距离（单位：m）
+      #     capture_offset: "0.05"          # 相机拍摄偏移值，末端执行器与相机偏移（单位：m）
+
+      - task_type: "aruco_localization"
+        description: "移动机械臂到Aruco码上方, 检测Aruco码位姿"
+        parameters:
+         
+          capture_pose: [0.21376, 0.02412, 0.21029, -0.03456, 0.68164, 0.03224, 0.73016]
+          marker_id: 582                       # AR码ID（用于匹配）
+          aruco_hover_distance: "0.30"                 # 机械臂末端到目标距离（单位：m）
+          capture_offset: "0.05"          # 相机拍摄偏移值，末端执行器与相机偏移（单位：m）
+
+
+      - task_type: "key_enable"
+        description: "键允许任务"
+        parameters:
+          capture_offset: "0.02"
+          key_hover_distance: "0.28"          # 机械臂末端到键允许区域距离（单位：m）
+          key_pick_distance: "0.16"          # 机械臂末端到键允许区域抓取距离（单位：m）
+          open_position: "0.015"          # 夹爪张开位置（单位：m）
+          close_position: "0.01"          # 夹爪闭合位置（单位：m）
+
+      # - task_type: "lift_control"
+      #   description: "将升降台升到任务点指定高度"
+      #   parameters:
+      #     lift_height: "125"              # 升降台高度（单位：mm）
+      
+      # - task_type: "key_enable"
+      #   description: "键允许任务"
+      #   parameters:
+      #     capture_offset: "0.02"
+      #     key_hover_distance: "0.28"          # 机械臂末端到键允许区域距离（单位：m）
+      #     key_pick_distance: "0.16"          # 机械臂末端到键允许区域抓取距离（单位：m）
+      #     open_position: "0.015"          # 夹爪张开位置（单位：m）
+      #     close_position: "0.01"          # 夹爪闭合位置（单位：m）
+
+      
+
+
+      - task_type: "initialize_system"
+        description: "设备初始化"
+        parameters:
+      
+      - task_type: "lift_control"
+        description: "将升降台升到任务点指定高度"
+        parameters:
+          lift_height: "140"              # 升降台高度（单位：mm）
+
+
+# 动作模板（可复用）
+# action_templates:
+#   handle_alarm:
+#     - type: "arm_move"
+#       target: "silence_button_pose"        # 预定义的按钮位姿
+#     - type: "arm_move"
+#       target: "reset_button_pose"
+#     - type: "input_password"
+#       1"<redacted>"
