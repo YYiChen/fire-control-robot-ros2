@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <world name="stereo_test">
+    <include><uri>model://ground_plane</uri></include>
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://stereo_rig</uri></include>
+
+    <!-- A 0.40 m wide high-contrast panel, centred 0.60 m in front of the rig. -->
+    <model name="distance_panel_0_60m">
+      <static>true</static>
+      <pose>0.60 0 0.50 0 0 0</pose>
+      <link name="panel_link">
+        <visual name="panel_visual">
+          <geometry><box><size>0.04 0.40 0.30</size></box></geometry>
+          <material><ambient>0.85 0.85 0.85 1</ambient></material>
+        </visual>
+        <!-- Checker texture gives the stereo matcher features at the image centre. -->
+        <visual name="checker_1"><pose>-0.025 -0.06 -0.06 0 0 0</pose><geometry><box><size>0.01 0.04 0.04</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual>
+        <visual name="checker_2"><pose>-0.025 0.02 -0.06 0 0 0</pose><geometry><box><size>0.01 0.04 0.04</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual>
+        <visual name="checker_3"><pose>-0.025 -0.02 -0.02 0 0 0</pose><geometry><box><size>0.01 0.04 0.04</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual>
+        <visual name="checker_4"><pose>-0.025 0.06 -0.02 0 0 0</pose><geometry><box><size>0.01 0.04 0.04</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual>
+        <visual name="checker_5"><pose>-0.025 -0.06 0.02 0 0 0</pose><geometry><box><size>0.01 0.04 0.04</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual>
+        <visual name="checker_6"><pose>-0.025 0.02 0.02 0 0 0</pose><geometry><box><size>0.01 0.04 0.04</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual>
+        <visual name="checker_7"><pose>-0.025 -0.02 0.06 0 0 0</pose><geometry><box><size>0.01 0.04 0.04</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual>
+        <visual name="checker_8"><pose>-0.025 0.06 0.06 0 0 0</pose><geometry><box><size>0.01 0.04 0.04</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual>
+        <collision name="panel_collision">
+          <geometry><box><size>0.04 0.40 0.30</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+    <model name="left_marker">
+      <static>true</static>
+      <pose>0.575 -0.12 0.50 0 0 0</pose>
+      <link name="link"><visual name="visual"><geometry><box><size>0.01 0.08 0.08</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual></link>
+    </model>
+    <model name="right_marker">
+      <static>true</static>
+      <pose>0.575 0.12 0.50 0 0 0</pose>
+      <link name="link"><visual name="visual"><geometry><box><size>0.01 0.08 0.08</size></box></geometry><material><ambient>0.02 0.02 0.02 1</ambient></material></visual></link>
+    </model>
+  </world>
+</sdf>

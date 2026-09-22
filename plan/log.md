@@ -153,12 +153,12 @@
 
 ## 2026-09-22 —— 双目仿真依赖探测与最小处理管线
 
-- **target**：在不连接真机、底盘或工控机服务的条件下，为 Gazebo Classic 双目测试建立可验证的第一阶段入口。
-- **changed areas**：新增 `stereo_sim/`：30 Hz、640 × 480、60 mm 基线、0.4/0.6/0.8 m 测试距离的设计记录；只读 WSL 依赖探测脚本；只消费左右图像与 `CameraInfo` 的图像校正、视差、点云处理 launch 与参数文件。
-- **validation performed**：Git Bash `bash -n` 通过；launch 文件通过 `python -m py_compile`；检查确认 launch 含 `use_sim_time`、左右图像校正、`disparity_node` 和 `point_cloud_node`，且不含速度指令、底盘生成、CAN/串口或任务控制节点；`git diff --check` 通过。运行中的 WSL ROS 包、可用 Gazebo 双相机插件和实际图像/视差话题尚未验证，因为本会话无法直接执行 WSL 命令。SSH 到工控机的只读插件查询也超时，未作为判断依据。
-- **commit status**：已提交为 `a67fe2a`；待推送至私有远端 `origin/main`。
+- **target**：在不连接真机、底盘或工控机服务的条件下，完成 Gazebo Classic 双目仿真第一阶段：由左右相机图像生成校正图、视差和 XYZ 点云，并以已知距离验证深度。
+- **changed areas**：`stereo_sim/` 新增 30 Hz、640 × 480、60 mm 基线的静态 Gazebo 多相机模型和高对比度目标场景；提供参数化的图像校正、`disparity_node`、XYZ `point_cloud_node` 处理链；提供 0.40/0.60/0.80 m 世界生成器、单次与批量隔离测试脚本及深度验证器。预检脚本改为先 source ROS，再开启 Bash 未定义变量检查，修复用户遇到的 `AMENT_TRACE_SETUP_FILES` 错误。
+- **validation performed**：实际 WSL 预检确认 `gazebo_ros`、`gazebo_plugins`、`image_proc`、`stereo_image_proc`、`image_view`、三个处理可执行文件和 `libgazebo_ros_camera.so` 全部可用。隔离 `ROS_DOMAIN_ID=77` / Gazebo 端口 `11377` 下，三次无界面运行均发现左右原图、校正图、视差和点云：0.40 m 得中央深度 0.371 m（视差 234、点云 225）；0.60 m 得 0.573 m（234、209）；0.80 m 得 0.769 m（231、197），均通过相对深度范围。首轮集成中发现并修复 `uniqueness_ratio` 应为浮点数、`image_proc` 只提供单色校正图故先输出 XYZ 点云、均匀面板缺少对应纹理等问题。最终确认无隔离 ROS 节点或 `gzserver` 残留；未启动真实硬件或发送底盘命令。静态 Bash/Python/XML 检查与 Git 检查见本 target 最终验证。
+- **commit status**：初始脚手架为 `a67fe2a`；完整仿真实现待本次根仓库提交并推送。
 
 ### 后续修复
 
 - **问题**：用户首次运行预检时，`/opt/ros/humble/setup.bash` 在 `set -u` 环境下读取未定义的 `AMENT_TRACE_SETUP_FILES`，导致预检未开始。
-- **修复与验证**：将 `set -u` 移到 ROS setup 完成之后；Git Bash `bash -n` 通过，结构断言确认 `source` 在第 6 行、`set -u` 在第 14 行。实际 WSL 预检输出仍待下一次运行。
+- **修复与验证**：将 `set -u` 移到 ROS setup 完成之后；实际 WSL 预检已完整通过。

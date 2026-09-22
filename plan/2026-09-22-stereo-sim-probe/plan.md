@@ -21,8 +21,16 @@
 
 - `stereo_sim/README.md`
 - `stereo_sim/scripts/check_stereo_sim_dependencies.sh`
+- `stereo_sim/scripts/run_stereo_sim_test.sh`
+- `stereo_sim/scripts/verify_stereo_output.py`
+- `stereo_sim/scripts/generate_stereo_test_world.py`
+- `stereo_sim/scripts/run_stereo_range_test.sh`
 - `stereo_sim/launch/stereo_processing.launch.py`
+- `stereo_sim/launch/stereo_test_world.launch.py`
 - `stereo_sim/config/stereo_processing.yaml`
+- `stereo_sim/models/stereo_rig/model.config`
+- `stereo_sim/models/stereo_rig/model.sdf`
+- `stereo_sim/worlds/stereo_test.world`
 - `.gitignore`
 - `plan/2026-09-22-stereo-sim-probe/plan.md`
 - `plan/log.md`
@@ -45,18 +53,31 @@
 1. Record the supported 30 Hz / 60 mm baseline test configuration and the separation from real hardware.
 2. Add a WSL preflight script that reports required package, executable, and Gazebo plugin availability without installing anything.
 3. Add a parameterized processing launch file for rectification, disparity, and point-cloud nodes; it only consumes camera topics and does not command a robot.
-4. Perform static Python and shell syntax checks locally. Run-time ROS verification remains pending because this agent cannot execute WSL commands in this session.
+4. Add an isolated 30 Hz, 60 mm-baseline multicamera SDF model and a test world containing a known-distance panel target. It must use Humble's `libgazebo_ros_camera.so`, not the ROS 1 multicamera library name.
+5. Perform static Python and shell syntax checks locally, then run the isolated verifier inside WSL.
+6. Add an isolated, self-cleaning WSL runtime verifier so a later run proves images, disparity, and point-cloud publication without sharing the user's active ROS or Gazebo processes.
+7. Verify that central disparity estimates a plausible depth for the 0.60 m test panel, instead of treating topic existence as a depth result.
+8. Keep the isolated verifier shorter than the available foreground execution window by using one message-and-depth collection pass rather than redundant per-topic waits.
+9. Ensure the central depth target has visual texture; a uniform surface cannot provide stereo correspondence.
+10. Parameterize the known-distance test target and validate the 0.40 m, 0.60 m, and 0.80 m planned work range.
 
 The preflight must source `/opt/ros/humble/setup.bash` before enabling Bash's undefined-variable error mode: the Humble setup script reads optional `AMENT_TRACE_SETUP_FILES` state.
+
+The runtime configuration must use Humble's declared parameter types. The first integration run proved `stereo_image_proc.uniqueness_ratio` is a floating-point parameter.
+
+The Humble `image_proc` executable in this environment publishes the mono rectified feed needed by disparity but does not publish `image_rect_color`. The first point-cloud test therefore uses XYZ-only output; coloured points are a later optional enhancement.
 
 ## Validation
 
 - `bash -n` on the dependency probe.
-- Python syntax compilation of the launch file.
+- Python syntax compilation of launch and verifier scripts.
+- XML parse of model and world files.
 - textual checks that the launch file enables simulated time and contains no velocity, action, or hardware driver node.
+- WSL preflight check, followed by isolated 0.40 m, 0.60 m, and 0.80 m simulation runs that each prove raw images, rectification, disparity, XYZ point-cloud publication, and plausible central depth.
+- confirm the isolated ROS domain and Gazebo server have stopped after the final run.
 - `git diff --check` and `git status --short --branch`.
 
-These checks match a non-hardware scaffold. The preflight command has to run inside WSL before any package installation or Gazebo launch is claimed as verified.
+These checks match a non-hardware simulation target. No physical camera, robot, motor command, or industrial-PC service is started.
 
 ## Experience Signal (for human review)
 

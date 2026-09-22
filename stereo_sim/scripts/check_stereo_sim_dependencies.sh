@@ -36,13 +36,14 @@ check_executable() {
   fi
 }
 
-check_library() {
+check_required_library() {
   local library_name="$1"
   local library_path="/opt/ros/${ROS_DISTRO}/lib/${library_name}"
   if [[ -f "$library_path" ]]; then
     echo "PASS Gazebo plugin: $library_name"
   else
-    echo "INFO Gazebo plugin unavailable: $library_name"
+    echo "MISS Gazebo plugin: $library_name"
+    missing=1
   fi
 }
 
@@ -59,8 +60,12 @@ check_executable image_proc image_proc
 check_executable stereo_image_proc disparity_node
 check_executable stereo_image_proc point_cloud_node
 
-check_library libgazebo_ros_camera.so
-check_library libgazebo_ros_multicamera.so
+check_required_library libgazebo_ros_camera.so
+
+# In ROS 2 Humble, multicamera support is provided by libgazebo_ros_camera.so.
+# A separate libgazebo_ros_multicamera.so is a ROS 1 convention and is not a
+# dependency of this test.
+echo 'INFO multicamera implementation: libgazebo_ros_camera.so (ROS 2 Humble)'
 
 if [[ "$missing" -eq 0 ]]; then
   echo 'RESULT: READY (processing dependencies are present)'
