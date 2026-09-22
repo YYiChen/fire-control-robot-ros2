@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # Read-only dependency probe for the ROS 2 Humble Gazebo Classic stereo test.
 
-set -u
-
 if [[ -f /opt/ros/humble/setup.bash ]]; then
   # shellcheck disable=SC1091
   source /opt/ros/humble/setup.bash
@@ -10,6 +8,10 @@ else
   echo 'ERROR: /opt/ros/humble/setup.bash was not found.'
   exit 2
 fi
+
+# ROS 2's setup scripts read optional AMENT_* state.  Enable strict handling
+# only after they have populated the environment.
+set -u
 
 missing=0
 

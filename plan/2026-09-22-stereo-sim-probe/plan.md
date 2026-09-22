@@ -47,6 +47,8 @@
 3. Add a parameterized processing launch file for rectification, disparity, and point-cloud nodes; it only consumes camera topics and does not command a robot.
 4. Perform static Python and shell syntax checks locally. Run-time ROS verification remains pending because this agent cannot execute WSL commands in this session.
 
+The preflight must source `/opt/ros/humble/setup.bash` before enabling Bash's undefined-variable error mode: the Humble setup script reads optional `AMENT_TRACE_SETUP_FILES` state.
+
 ## Validation
 
 - `bash -n` on the dependency probe.

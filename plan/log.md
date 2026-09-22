@@ -157,3 +157,8 @@
 - **changed areas**：新增 `stereo_sim/`：30 Hz、640 × 480、60 mm 基线、0.4/0.6/0.8 m 测试距离的设计记录；只读 WSL 依赖探测脚本；只消费左右图像与 `CameraInfo` 的图像校正、视差、点云处理 launch 与参数文件。
 - **validation performed**：Git Bash `bash -n` 通过；launch 文件通过 `python -m py_compile`；检查确认 launch 含 `use_sim_time`、左右图像校正、`disparity_node` 和 `point_cloud_node`，且不含速度指令、底盘生成、CAN/串口或任务控制节点；`git diff --check` 通过。运行中的 WSL ROS 包、可用 Gazebo 双相机插件和实际图像/视差话题尚未验证，因为本会话无法直接执行 WSL 命令。SSH 到工控机的只读插件查询也超时，未作为判断依据。
 - **commit status**：已提交为 `a67fe2a`；待推送至私有远端 `origin/main`。
+
+### 后续修复
+
+- **问题**：用户首次运行预检时，`/opt/ros/humble/setup.bash` 在 `set -u` 环境下读取未定义的 `AMENT_TRACE_SETUP_FILES`，导致预检未开始。
+- **修复与验证**：将 `set -u` 移到 ROS setup 完成之后；Git Bash `bash -n` 通过，结构断言确认 `source` 在第 6 行、`set -u` 在第 14 行。实际 WSL 预检输出仍待下一次运行。
