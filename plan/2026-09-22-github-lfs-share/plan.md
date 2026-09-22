@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create a private GitHub repository containing the project while preserving the 103.44 MiB thesis source document through Git LFS so that the remote accepts the complete project history.
+Create a private GitHub repository containing the project while excluding both source Word documents from the shared Git history and preserving their local copies.
 
 ## Dirty-State Note
 
@@ -19,6 +19,7 @@ The two untracked `lab_room` files belong to the user's current scene work and a
 ## Owned Files
 
 - `.gitattributes`
+- `.gitignore`
 - `plan/2026-09-22-github-lfs-share/plan.md`
 - `plan/log.md`
 - local Git history and `origin` remote configuration required for this sharing target
@@ -32,30 +33,31 @@ The two untracked `lab_room` files belong to the user's current scene work and a
 ## Shared Dependencies
 
 - GitHub repository `YYiChen/fire-control-robot-ros2`, private
-- GitHub's 100 MiB normal Git blob limit
-- Git LFS client available locally
+- GitHub repository `YYiChen/fire-control-robot-ros2`, private
+- the user's instruction that Word papers must not be shared
 
 ## Expected Work
 
-1. Add the thesis `.docx` pattern to Git LFS and migrate existing local history to LFS pointers.
-2. Commit only the LFS tracking metadata and target records.
-3. Push `main` through the active local proxy and confirm a remote commit exists.
+1. Preserve local copies of the two `.docx` files outside the Git rewrite area.
+2. Remove both documents from all Git history and restore them locally as ignored/untracked source material.
+3. Update the target record, push `main` through the active local proxy, and confirm a remote commit exists.
 
 ## Validation
 
 - `git diff --check`
 - `git status --short --branch`
-- `git lfs ls-files` confirms the thesis document is an LFS object.
+- `git log --all -- <docx paths>` returns no shared-history entries.
+- local file checks confirm the papers remain available after the history rewrite.
 - GitHub REST commit query and `git ls-remote` confirm a non-empty `main` branch.
 
-These checks cover the actual remote-sharing behavior and the GitHub size limit that blocked the initial push. No ROS test is relevant because this change does not alter runtime code or configuration.
+These checks cover the actual remote-sharing behavior, the user-requested exclusion, and preservation of the local paper files. No ROS test is relevant because this change does not alter runtime code or configuration.
 
 ## Experience Signal (for human review)
 
-- GitHub rejected risk was found before upload completion: the thesis source document is over the normal per-file limit, so an LFS rule is required for a complete shared repository.
+- The original attempt identified the 103.44 MiB paper as exceeding GitHub's normal blob limit. The user then chose exclusion from the shared repository, which takes precedence over using LFS.
 
 ## Commit Intent
 
 ```text
-chore: track thesis source through git lfs
+chore: exclude papers from shared repository
 ```
