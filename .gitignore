@@ -1,5 +1,2 @@
-Thumbs.db
-.DS_Store
-~$*
-*.tmp
-*.bak
+# Local source papers are intentionally excluded from the shared repository.
+*.docx
