@@ -149,4 +149,4 @@
 - **target**：创建可与同学共享的私有 GitHub 仓库，按用户最新要求不共享 Word 论文。
 - **changed areas**：创建私有仓库 `YYiChen/fire-control-robot-ros2` 并配置为 `origin`；将两份 `.docx` 从全部共享 Git 历史移除，同时保留电脑上的原文件；新增 `*.docx` 忽略规则以防后续误提交；新增本 target plan。
 - **validation performed**：首次推送前发现中文论文文件为 103.44 MiB，超过 GitHub 普通 Git 的 100 MiB 单文件限制；曾短暂改为 LFS 指针，但在推送前收到用户“不用推送”的明确指令，随即停止推送并改为完全排除。历史过滤后工作区中的 LFS 指针已从本机 LFS 缓存恢复为真实文件（108,465,283 与 36,665,927 bytes）。后续以 `main` 历史路径检索为空、本地文件仍在、GitHub 远端提交记录和 `git ls-remote` 作为确认。
-- **commit status**：待随 `chore: exclude papers from shared repository` 提交；远端 push 待验证。
+- **commit status**：已推送至私有远端 `origin/main`，远端 `HEAD=ad230cd7115613eb6ef2724ad67ab5fed059214e`；本条最终确认记录待随下一次小型文档提交推送。
