@@ -150,3 +150,10 @@
 - **changed areas**：创建私有仓库 `YYiChen/fire-control-robot-ros2` 并配置为 `origin`；将两份 `.docx` 从全部共享 Git 历史移除，同时保留电脑上的原文件；新增 `*.docx` 忽略规则以防后续误提交；新增本 target plan。
 - **validation performed**：首次推送前发现中文论文文件为 103.44 MiB，超过 GitHub 普通 Git 的 100 MiB 单文件限制；曾短暂改为 LFS 指针，但在推送前收到用户“不用推送”的明确指令，随即停止推送并改为完全排除。历史过滤后工作区中的 LFS 指针已从本机 LFS 缓存恢复为真实文件（108,465,283 与 36,665,927 bytes）。后续以 `main` 历史路径检索为空、本地文件仍在、GitHub 远端提交记录和 `git ls-remote` 作为确认。
 - **commit status**：已推送至私有远端 `origin/main`，远端 `HEAD=ad230cd7115613eb6ef2724ad67ab5fed059214e`；本条最终确认记录待随下一次小型文档提交推送。
+
+## 2026-09-22 —— 双目仿真依赖探测与最小处理管线
+
+- **target**：在不连接真机、底盘或工控机服务的条件下，为 Gazebo Classic 双目测试建立可验证的第一阶段入口。
+- **changed areas**：新增 `stereo_sim/`：30 Hz、640 × 480、60 mm 基线、0.4/0.6/0.8 m 测试距离的设计记录；只读 WSL 依赖探测脚本；只消费左右图像与 `CameraInfo` 的图像校正、视差、点云处理 launch 与参数文件。
+- **validation performed**：Git Bash `bash -n` 通过；launch 文件通过 `python -m py_compile`；检查确认 launch 含 `use_sim_time`、左右图像校正、`disparity_node` 和 `point_cloud_node`，且不含速度指令、底盘生成、CAN/串口或任务控制节点；`git diff --check` 通过。运行中的 WSL ROS 包、可用 Gazebo 双相机插件和实际图像/视差话题尚未验证，因为本会话无法直接执行 WSL 命令。SSH 到工控机的只读插件查询也超时，未作为判断依据。
+- **commit status**：已提交为 `a67fe2a`；待推送至私有远端 `origin/main`。
