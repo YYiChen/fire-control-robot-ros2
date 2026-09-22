@@ -1,0 +1,21 @@
+aruco_id: 582
+coordinate_system:
+  origin: [0.0, 0.0, 0.0]
+  orientation: XY_plane
+regions:
+  Mute:
+    rel_position: [0.073, 0.129, 0.0]
+  Reset:
+    rel_position: [0.117, 0.13, 0.0]
+  '1':
+    rel_position: [0.05, 0.111, 0.0]
+  Confirm:
+    rel_position: [0.117, 0.04, 0.0]
+  Self-check:
+    rel_position: [0.095, 0.13, 0.0]
+  Menu:
+    rel_position: [0.095, 0.058, 0.0]
+  ScreenCenter:
+    rel_position: [-0.052, 0.084, 0.0]
+  IndicatorAreaCenter:
+    rel_position: [-0.184, 0.084, 0.0]

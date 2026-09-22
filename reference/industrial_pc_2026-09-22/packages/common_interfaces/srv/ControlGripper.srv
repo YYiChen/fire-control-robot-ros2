@@ -1,0 +1,8 @@
+# ControlGripper.srv
+bool open            # true表示打开夹爪，false表示关闭夹爪
+string named_position # 可选的命名位置（如果提供，将优先使用）
+float64[] joint_positions # 可选的关节位置（如果提供，将优先使用）
+
+---
+bool success
+string message

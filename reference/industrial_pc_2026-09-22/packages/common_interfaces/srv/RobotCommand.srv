@@ -1,0 +1,9 @@
+# 请求格式
+string command        # 操作指令 e.g. "ACK_ALARM", "RECORD_LOG"
+string target_zone    # 目标区域 e.g. "A001"
+string extra_params   # JSON格式扩展参数
+
+---
+# 响应格式
+bool success          # 执行结果
+string message        # 详细信息

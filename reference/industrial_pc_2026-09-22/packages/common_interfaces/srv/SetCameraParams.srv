@@ -1,0 +1,13 @@
+# SetCameraParams.srv
+bool auto_gain_enabled        # 自动增益开关
+float32 manual_gain_value     # 手动增益值
+float32 auto_gain_lower_limit # 自动增益下限
+float32 auto_gain_upper_limit # 自自动增益上限
+bool auto_exposure_enabled    # 自动曝光开关
+float32 manual_exposure_time  # 手动曝光时间(微秒)
+float32 auto_exposure_lower_limit # 自动曝光时间下限
+float32 auto_exposure_upper_limit # 自动曝光时间上限
+
+---
+bool success
+string message

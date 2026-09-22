@@ -128,3 +128,11 @@
 - **changed areas**：新增 `navigation_profiles/install_lab_room_nav2_profile.py`，在 WSL 中复制当前安装的 TurtleBot3 Burger 参数文件，并只将 `planner_server → GridBased → use_astar` 改为 `true`，不修改 `/opt/ros`；新增 `bspline_path_diagnostic.py`，订阅 `/plan` 并发布三次均匀 B 样条的 `/plan_bspline`；新增 `navigation_profiles/README.md`，记录安装、启动、RViz 对比和接入安全门槛；新增本 target plan。
 - **validation performed**：两个 Python 文件均通过 `python -m py_compile`；A* 安装器的 `--help` 参数解析通过；`git diff --check` 通过。脚本特意基于 WSL 实际安装的 `burger.yaml` 生成配置，运行时参数加载、`use_astar=True` 和 `/plan_bspline` 发布仍须在用户的 WSL 内验证。
 - **commit status**：待本 target 根仓库提交。
+## 2026-09-22 —— 工控机视觉与任务源码择优归档
+
+- **target**：通过 SSH 只读调查工控机，保留对当前消防控制室机器人学习项目有直接价值的单目采集、ArUco 定位、OCR 与任务编排源码参考。
+- **changed areas**：新增 `reference/industrial_pc_2026-09-22/` 与 `docs/industrial-pc-source-audit.md`。归档了 `common_interfaces`、`fia_utils`、`task_manager`、启动脚本、面板识别前端、相机服务、单相机标定和 ArUco 手眼定位；加入全量本地 SHA-256 清单。
+- **范围与排除**：未改动远程主机；未复制构建产物、模型权重、第三方 SDK/PaddleOCR、图像样本、私钥或任务密码配置。删除本地的历史复件/临时文件；两处硬编码内网 RTSP 地址已本地脱敏。
+- **发现**：当前消防链路明确为“单目 RGB 图像服务 + 单相机内参 + ArUco 方形码 + 手眼标定”。可在其前添加双目同步、矫正和视差/深度层，但双目标定、基线、同步及精度不可从单目源码推断。另一工作区虽有深度/双目相关文件，尚无其已接入消防识别链路的证据。
+- **validation performed**：对 13 个关键锚点在远程与本地分别计算 SHA-256，全部一致；生成本地 `SHA256SUMS.txt`；检查本地副本不含私钥、模型权重、历史复件、临时目录或未脱敏内网 RTSP 地址。暂存的上游原始源码在 `git diff --cached --check` 中报告既有尾随空白；为保持 SHA-256 一致性未改写，提交后工作树的 `git diff --check` 通过。
+- **commit status**：已提交到根仓库 `main`（本条记录随提交一并保存）。

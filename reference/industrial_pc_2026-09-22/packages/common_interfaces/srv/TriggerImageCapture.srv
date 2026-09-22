@@ -1,0 +1,5 @@
+# service/TriggerImageCapture.srv
+bool is_rectified
+---
+bool success
+sensor_msgs/Image image  # 返回捕获的图像数据

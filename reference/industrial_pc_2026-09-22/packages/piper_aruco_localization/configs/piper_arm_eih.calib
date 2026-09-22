@@ -1,0 +1,20 @@
+parameters:
+  name: piper_arm_eih
+  calibration_type: eye_in_hand
+  robot_base_frame: arm_base_link
+  robot_effector_frame: gripper_base
+  tracking_base_frame: ks_camera_optical_frame
+  tracking_marker_frame: aruco_marker_frame
+  freehand_robot_movement: true
+  move_group_namespace: /
+  move_group: manipulator
+transform:
+  translation:
+    x: -0.06851417537069897
+    y: 0.00018277172500551274
+    z: 0.04521384770528266
+  rotation:
+    x: -0.018195278146217925
+    y: 0.024935356811845222
+    z: -0.7077423883847062
+    w: 0.7057959135028762

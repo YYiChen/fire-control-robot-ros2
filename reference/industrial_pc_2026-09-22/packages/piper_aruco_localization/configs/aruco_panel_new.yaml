@@ -1,0 +1,55 @@
+panel_model: "JB-TG-HJ9000"
+main_aruco_id: 582
+aux_aruco_id: 68
+main_aux_offset: [-0.092, -0.045, 0.0]  # aux相对于main的偏移，单位米
+# 实际偏移量:  x=-0.0932, y=-0.0425, z=-0.0158 (米)
+coordinate_system:
+  origin: [0.0, 0.0, 0.0]
+  orientation: XY_plane
+regions:
+  special:
+    Origin:
+      rel_position: [0.0, 0.0, 0.0]
+      type: ORIGIN
+  buttons:
+    Mute:
+      rel_position: [0.081, 0.123, 0.0]
+      type: BUTTON_MUTE
+    Reset:
+      rel_position: [0.125, 0.122, 0.0]
+      type: BUTTON_RESET
+    '1':
+      rel_position: [0.060, 0.106, 0.0]
+      type: BUTTON_1
+    Confirm:
+      rel_position: [0.112, 0.022, 0.0]
+      type: BUTTON_CONFIRM
+  screens:
+    ScreenCenter:
+      rel_position: [-0.052, 0.082, 0.0]
+      type: SCREEN
+  indicators:
+    IndicatorAreaCenter:
+      rel_position: [-0.175, 0.120, 0.0]
+      type: LED
+  Control:
+    KeyEnable:
+      # rel_position: [-0.230, -0.175, 0.0]
+      # rel_position: [-0.052, 0.084, 0.0]
+      rel_position: [-0.220, -0.181, 0.0]
+      type: KEY_ENABLE
+
+# 区域 1 在Aruco坐标系下的位置: [0.0489, 0.1041, 0.0000]
+# 区域 Mute 在Aruco坐标系下的位置: [0.0719, 0.1241, 0.0000]
+# 区域 Reset 在Aruco坐标系下的位置: [0.1159, 0.1241, 0.0000]
+# 区域 Confirm 在Aruco坐标系下的位置: [0.1189, 0.0421, 0.0000]
+
+
+# 区域 Origin 在机械臂基坐标系下的位置: [0.5918, -0.0280, 0.2905]
+# 区域 ScreenCenter 在机械臂基坐标系下的位置: [0.5976, 0.0222, 0.3785]
+# 区域 IndicatorAreaCenter 在机械臂基坐标系下的位置: [0.5964, 0.1308, 0.3634]
+# 区域 KeyEnable 在机械臂基坐标系下的位置: [0.5802, 0.1993, 0.1262]
+# 区域 1 在机械臂基坐标系下的位置: [0.5988, -0.0804, 0.3928]
+# 区域 Mute 在机械臂基坐标系下的位置: [0.6002, -0.1041, 0.4119]
+# 区域 Reset 在机械臂基坐标系下的位置: [0.6002, -0.1480, 0.4103]
+# 区域 Confirm 在机械臂基坐标系下的位置: [0.5946, -0.1431, 0.3286]

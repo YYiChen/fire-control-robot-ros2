@@ -1,0 +1,23 @@
+# 操作类型枚举
+uint8 STOP=1
+uint8 UP=2
+uint8 DOWN=3
+uint8 RESET=4
+uint8 SET_HEIGHT=5
+uint8 SET_DEVICE_ID=6
+uint8 STEP_UP=7      # 按步长上升, 默认步长为1mm
+uint8 STEP_DOWN=8    # 按步长下降
+
+# 请求部分
+uint8 command_type  # 操作类型枚举
+
+# 以下字段根据command_type选择使用
+uint8 device_id    # 设备地址 (01)
+uint16 target_height     # 目标高度（0-380, 单位：mm）
+uint8 motor_mask   # 位掩码选择电机 (0b0001=motor1, 0b0010=motor2...)
+uint8 new_device_id   # 新设备ID (用于修改设备编号)
+
+---
+# 响应部分
+bool success
+string message

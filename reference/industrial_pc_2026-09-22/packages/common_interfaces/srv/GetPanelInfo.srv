@@ -1,0 +1,11 @@
+# service/GetPanelInfo.srv
+
+string panel_model              # 消防主机型号
+PanelRegion panel_region        # 识别区域枚举
+---
+bool success
+string message
+ScreenInfo screen_info          # 屏幕信息
+LEDStatus[] indicator_lights    # 指示灯状态数组
+
+

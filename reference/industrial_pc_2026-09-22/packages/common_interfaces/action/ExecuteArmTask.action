@@ -1,0 +1,13 @@
+# Goal
+ArmTaskType task_type
+geometry_msgs/PoseStamped[] waypoints
+string[] joint_name
+float64[] target_angle
+---
+# Result
+bool success
+string message
+---
+# Feedback
+int32 current_waypoint_index
+float64 percent_complete
