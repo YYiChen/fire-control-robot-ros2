@@ -217,7 +217,7 @@ python3 ~/stereo_sim/scripts/verify_semantic_approach_synthetic.py
 
 ## 双目视觉里程计审计：逐步移除仿真真值捷径
 
-使用 [RTAB-Map 官方 ROS2 双目里程计](https://github.com/introlab/rtabmap_ros) 做**独立审计**；它目前尚未接管前述语义/OctoMap 主链。WSL 中仅补装所需包（本机 apt 报告 0 升级、14 新装）：
+使用 [RTAB-Map 官方 ROS2 双目里程计](https://github.com/introlab/rtabmap_ros) 做**独立审计**；下文另有接入语义/OctoMap 的隔离实验。WSL 中仅补装所需包（本机 apt 报告 0 升级、14 新装）：
 
 ```bash
 sudo apt install ros-humble-rtabmap-odom
@@ -233,4 +233,19 @@ sudo apt install ros-humble-rtabmap-odom
 | 1 | 0.0051 m | 0.0096 rad | 643 | 通过审计阈值 |
 | 2 | 0.0021 m | 0.0047 rad | 617 | 通过审计阈值 |
 
-测试中单个中途样本仍可能出现约 1 cm 的横向波动，因此最终误差不足以证明全过程毫米级稳定；尚需多场景、往返/回环、遮挡、低纹理和机器人运动的基准测试。**此审计证明该配置有望替换 Gazebo 真值，尚未证明当前语义地图/路径链已完成替换。**
+测试中单个中途样本仍可能出现约 1 cm 的横向波动，因此最终误差不足以证明全过程毫米级稳定；尚需多场景、往返/回环、遮挡、低纹理和机器人运动的基准测试。
+
+## 视觉里程计接管语义按钮、占据地图与接近路径
+
+```bash
+source /opt/ros/humble/setup.bash
+~/stereo_sim/scripts/run_semantic_visual_odometry_test.sh
+```
+
+隔离脚本使用 `ROS_DOMAIN_ID=83` / Gazebo 端口 `11383`；运行后会停止自己启动的进程。`semantic_visual_odometry.launch.py` 复用上面的 RTAB-Map 双目配置，让语义节点与路径规划器订阅 `/vo/odom`，它们均**不订阅** `/model_states`。Gazebo 真值仅供验证器比较。`map` 是视觉里程计起点建立的局部坐标系，不具有回环校正，也不应视为实机全局地图。`map → stereo_base_link` 由 VO 位姿产生，基座到左相机光学坐标系使用固定外参。
+
+实测发现 30 Hz 原始点云有时先于较慢的视觉里程计/TF 到达 OctoMap，导致 TF 消息队列丢帧、地图中断。`vo_synchronized_cloud.py` 只转发与有效 `/vo/odom` 同时间戳的点云到 `/vo/points2`，最多约 5 Hz；没有对应视觉位姿的点云不参与建图。原始双目画面与 `/stereo/points2` 保持原频率，限速只作用于本实验的三维建图输入。规划器会明确报告过期输入、不可通行或 `ready`，不会在未知区生成路线。
+
+2026-09-24 三次独立无界面复测均通过：相机平滑前进 0.10 m、横移 0.05 m 后，VO 位移向量误差约 0.0048/0.0015/0.0017 m；三个按钮在移动阶段的三维位置误差中位数约 1.4–4.5 mm；OctoMap 投影已知空闲格从 216 增至 331/343/336；`reset` 的建议路径均为 7 个路点，终点距按钮 0.249 m，检查时所有路点落在已知空闲格。建图发生过间歇性停更，桥接修正后这三轮未复现，但三轮不能证明长期稳定。
+
+这一步打通了**理想面板场景中的视觉位姿 → 按钮三维坐标 → 累积占据图 → 接近路径建议**；测试器用 Gazebo 服务移动相机，系统尚未自动驾驶真实或仿真车体。现有按钮依赖理想颜色和 ArUco，仍需真实面板识别、长程视觉 SLAM/回环、相机与机械臂外参、运动中失效恢复、多场景统计和按压闭环，才能达到完整科研验证。

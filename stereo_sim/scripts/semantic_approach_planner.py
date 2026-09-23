@@ -10,8 +10,9 @@ import numpy as np
 import rclpy
 from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import OccupancyGrid, Path
+from nav_msgs.msg import OccupancyGrid, Odometry, Path
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import String
 
 
@@ -82,6 +83,10 @@ class ApproachPlanner(Node):
         self.declare_parameter('target_button', 'reset')
         self.declare_parameter('stand_off_m', 0.25)
         self.declare_parameter('footprint_radius_m', 0.07)
+        self.declare_parameter('pose_source', 'gazebo')
+        self.pose_source = self.get_parameter('pose_source').value
+        if self.pose_source not in ('gazebo', 'odometry'):
+            raise ValueError('pose_source must be gazebo or odometry')
         self.target = self.get_parameter('target_button').value
         if self.target not in BUTTONS:
             raise ValueError(f'target_button must be one of {BUTTONS}')
@@ -96,7 +101,11 @@ class ApproachPlanner(Node):
         self.create_subscription(PoseStamped, f'/semantic_panel/button/{self.target}/pose',
                                  self.on_button, 10)
         self.create_subscription(PoseStamped, '/semantic_panel/marker_pose', self.on_marker, 10)
-        self.create_subscription(ModelStates, '/model_states', self.on_models, 10)
+        if self.pose_source == 'gazebo':
+            self.create_subscription(ModelStates, '/model_states', self.on_models, 10)
+        else:
+            self.create_subscription(Odometry, '/vo/odom', self.on_odom,
+                                     qos_profile_sensor_data)
         self.create_timer(0.5, self.plan)
 
     def remember(self, name, value):
@@ -116,6 +125,10 @@ class ApproachPlanner(Node):
         if 'stereo_rig' in msg.name:
             self.remember('rig', msg.pose[msg.name.index('stereo_rig')])
 
+    def on_odom(self, msg):
+        if msg.header.frame_id == 'vo_odom' and msg.child_frame_id == 'stereo_base_link':
+            self.remember('rig', msg.pose.pose)
+
     def publish(self, state, path=None, **data):
         result = String()
         result.data = json.dumps({'state': state, 'target': self.target, **data}, sort_keys=True)
@@ -128,9 +141,11 @@ class ApproachPlanner(Node):
 
     def plan(self):
         now = self.get_clock().now().nanoseconds * 1e-9
-        if any(getattr(self, name) is None or now - self.seen.get(name, -1e9) > 0.6
-               for name in ('map', 'button', 'marker', 'rig')):
-            self.publish('missing_or_stale_input')
+        max_age = {'map': 3.0, 'button': 0.6, 'marker': 0.6, 'rig': 0.6}
+        stale = [name for name, limit in max_age.items()
+                 if getattr(self, name) is None or now - self.seen.get(name, -1e9) > limit]
+        if stale:
+            self.publish('missing_or_stale_input', inputs=stale)
             return
         grid = self.map
         if grid.header.frame_id != 'map' or self.button.header.frame_id != 'map' or \

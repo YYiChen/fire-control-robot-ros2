@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Fuse simulated coloured button detections with stereo disparity and Gazebo pose.
+"""Fuse simulated coloured button detections with stereo disparity and pose.
 
-Gazebo ModelStates supplies camera pose only for this isolated simulation. A real
-robot must replace that source with its measured camera TF and hand-eye chain.
+The default mode uses Gazebo pose for legacy simulation checks. The odometry
+mode instead uses stereo VO and never subscribes to Gazebo ModelStates.
 """
 
 from collections import deque
@@ -15,6 +15,7 @@ import rclpy
 from cv_bridge import CvBridge
 from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import PoseStamped, TransformStamped
+from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import CameraInfo, Image
@@ -97,9 +98,15 @@ class SemanticPanelNode(Node):
         self.declare_parameter('rig_model', 'stereo_rig')
         self.declare_parameter('camera_frame', 'stereo_left_camera_optical_frame')
         self.declare_parameter('minimum_depth_pixels', 8)
+        self.declare_parameter('pose_source', 'gazebo')
+        self.pose_source = self.get_parameter('pose_source').value
+        if self.pose_source not in ('gazebo', 'odometry'):
+            raise ValueError('pose_source must be gazebo or odometry')
         self.bridge = CvBridge()
-        self.images = deque(maxlen=6)
-        self.disparities = deque(maxlen=6)
+        self.images = deque(maxlen=15)
+        self.disparities = deque(maxlen=15)
+        self.odometry = deque(maxlen=30)
+        self.camera_infos = deque(maxlen=30)
         self.camera_info = None
         self.rig_pose = None
         self.rig_pose_time = None
@@ -123,18 +130,36 @@ class SemanticPanelNode(Node):
         self.create_subscription(
             DisparityImage, '/stereo/disparity', self.on_disparity,
             qos_profile_sensor_data)
-        self.create_subscription(
-            ModelStates, '/model_states', self.on_models,
-            qos_profile_sensor_data)
+        if self.pose_source == 'gazebo':
+            self.create_subscription(
+                ModelStates, '/model_states', self.on_models,
+                qos_profile_sensor_data)
+        else:
+            self.create_subscription(
+                Odometry, '/vo/odom', self.on_odom,
+                qos_profile_sensor_data)
 
     def on_camera_info(self, msg):
         self.camera_info = msg
+        self.camera_infos.append(msg)
 
     def on_models(self, msg):
         name = self.get_parameter('rig_model').value
         if name in msg.name:
             self.rig_pose = msg.pose[msg.name.index(name)]
             self.rig_pose_time = self.get_clock().now().nanoseconds * 1e-9
+
+    def on_odom(self, msg):
+        if msg.header.frame_id != 'vo_odom' or msg.child_frame_id != 'stereo_base_link':
+            return
+        self.odometry.append(msg)
+        rig = msg.pose.pose
+        q = rig.orientation
+        self.publish_camera_tf(
+            msg.header.stamp,
+            (rig.position.x, rig.position.y, rig.position.z),
+            (q.x, q.y, q.z, q.w), 'stereo_base_link')
+        self.try_pair()
 
     def on_image(self, msg):
         self.images.append(msg)
@@ -154,6 +179,24 @@ class SemanticPanelNode(Node):
         if best[0] > 0.012:
             return
         _, image, disparity = best
+        if self.pose_source == 'odometry':
+            if not self.odometry:
+                return
+            stamp = stamp_seconds(image.header.stamp)
+            pose = min(self.odometry,
+                       key=lambda msg: abs(stamp_seconds(msg.header.stamp) - stamp))
+            pose_stamp = stamp_seconds(pose.header.stamp)
+            if abs(pose_stamp - stamp) > 0.025:
+                return
+            if not self.camera_infos:
+                return
+            info = min(self.camera_infos,
+                       key=lambda msg: abs(stamp_seconds(msg.header.stamp) - stamp))
+            if abs(stamp_seconds(info.header.stamp) - stamp) > 0.025:
+                return
+            self.camera_info = info
+            self.rig_pose = pose.pose.pose
+            self.rig_pose_time = pose_stamp
         self.images.remove(image)
         self.disparities.remove(disparity)
         self.process(image, disparity)
@@ -224,10 +267,10 @@ class SemanticPanelNode(Node):
         stamp = stamp_seconds(image.header.stamp)
         statuses = {}
         if self.camera_info is None or self.rig_pose is None:
-            self.publish_status(stamp, {}, 'missing_camera_info_or_gazebo_pose')
+            self.publish_status(stamp, {}, 'missing_camera_info_or_pose')
             return
         if self.rig_pose_time is None or abs(stamp - self.rig_pose_time) > 0.20:
-            self.publish_status(stamp, {}, 'stale_gazebo_pose')
+            self.publish_status(stamp, {}, 'stale_pose')
             return
         if abs(stamp - stamp_seconds(self.camera_info.header.stamp)) > 0.10:
             self.publish_status(stamp, {}, 'stale_camera_info')
@@ -252,7 +295,9 @@ class SemanticPanelNode(Node):
             rig.position.x + camera_offset[0],
             rig.position.y + camera_offset[1],
             rig.position.z + camera_offset[2])
-        self.publish_camera_tf(image.header.stamp, camera_origin, quat_multiply(q_rig, optical_to_model_quat()), frame)
+        if self.pose_source == 'gazebo':
+            self.publish_camera_tf(image.header.stamp, camera_origin,
+                                   quat_multiply(q_rig, optical_to_model_quat()), frame)
         if marker is not None:
             marker_rotation, marker_optical, marker_corners = marker
             p_model = (marker_optical[2], -marker_optical[0], -marker_optical[1])
