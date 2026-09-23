@@ -176,3 +176,21 @@ SEMANTIC_WORLD=~/stereo_sim/worlds/semantic_panel_shifted.world \
 SEMANTIC_PANEL_X=0.75 SEMANTIC_PANEL_Y=0.02 SEMANTIC_PANEL_YAW=-0.06 \
   ~/stereo_sim/scripts/run_semantic_panel_test.sh
 ```
+
+## 实时三维占据地图：OctoMap
+
+在 WSL 安装一次 ROS 2 Humble 的 OctoMap server（只安装，不升级现有 ROS）：
+
+```bash
+sudo apt install ros-humble-octomap-server
+```
+
+运行同一面板场景的三维建图与语义关联检查：
+
+```bash
+~/stereo_sim/scripts/run_semantic_occupancy_test.sh
+```
+
+该脚本使用独立 `ROS_DOMAIN_ID=79` / Gazebo 端口 `11379`。`semantic_occupancy.launch.py` 将 `/stereo/points2` 接入 OctoMap，使用 `map` 作为固定坐标系、2.5 cm 体素和 1.2 m 最大测距；`/octomap_point_cloud_centers` 是已占据体素中心的三维点云，`/octomap_binary` 为可保存的占据树消息。按钮名称和位置仍由 `/semantic_panel/button/*/pose` 提供，OctoMap 不会自动替这些体素命名。
+
+2026-09-23 WSL 无界面测试：默认面板、相机移动前后分别观察到 114/168 个已占据体素，三个按钮到最近已占据体素约 0.010/0.015/0.009 m；偏移并旋转的面板分别观察到 184/192 个体素，相应距离约 0.019/0.012/0.011 m。两个场景都持续收到点云和地图更新，三个按钮位置仍通过 Gazebo 真值比较。实验依赖真值相机 TF，并未解决实机 SLAM、遮挡、不规则障碍、导航控制和机械臂按压。2.5 cm 地图体素和厘米级表面匹配也不应被解释成按压精度。
