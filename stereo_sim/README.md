@@ -194,3 +194,15 @@ sudo apt install ros-humble-octomap-server
 该脚本使用独立 `ROS_DOMAIN_ID=79` / Gazebo 端口 `11379`。`semantic_occupancy.launch.py` 将 `/stereo/points2` 接入 OctoMap，使用 `map` 作为固定坐标系、2.5 cm 体素和 1.2 m 最大测距；`/octomap_point_cloud_centers` 是已占据体素中心的三维点云，`/octomap_binary` 为可保存的占据树消息。按钮名称和位置仍由 `/semantic_panel/button/*/pose` 提供，OctoMap 不会自动替这些体素命名。
 
 2026-09-23 WSL 无界面测试：默认面板、相机移动前后分别观察到 114/168 个已占据体素，三个按钮到最近已占据体素约 0.010/0.015/0.009 m；偏移并旋转的面板分别观察到 184/192 个体素，相应距离约 0.019/0.012/0.011 m。两个场景都持续收到点云和地图更新，三个按钮位置仍通过 Gazebo 真值比较。实验依赖真值相机 TF，并未解决实机 SLAM、遮挡、不规则障碍、导航控制和机械臂按压。2.5 cm 地图体素和厘米级表面匹配也不应被解释成按压精度。
+
+## 按钮接近位与 A* 路径建议
+
+`semantic_occupancy.launch.py` 还会启动一个**只规划、不驱动车体**的节点。默认目标为 `reset` 按钮，取面板法线朝相机的一侧，在按钮前 0.25 m 处选候选观察位；用 `/projected_map` 的已知空闲格做 A* 搜索，先对占据格和未知格施加 7 cm 足迹缓冲。只有起终点和整条路径都有已知空闲空间时，才在 `/semantic_panel/approach_path` 发布非空 `nav_msgs/Path`。`/semantic_panel/approach_status` 说明 `ready`、输入过期、起终点不安全或无路可达的原因。此路径是**建议**，并未接入 Nav2 或机械臂。
+
+```bash
+source /opt/ros/humble/setup.bash
+python3 ~/stereo_sim/scripts/verify_semantic_approach_synthetic.py
+~/stereo_sim/scripts/run_semantic_approach_test.sh
+```
+
+受控地图测试得到 16 个路点，绕过中间障碍的最大横向位移约 0.138 m；将通道堵死后状态为 `no_known_free_path`，输出空路径。当前实际的单视角双目场景中，OctoMap 投影虽然有约 300 个空闲格，但空闲扇区不足以容纳 7 cm 足迹，规划器输出 `start_or_goal_not_free`，不输出路径。要让它在真实场景给出安全路线，需增加视角覆盖或使用已有 2D 激光地图/导航图，解决定位与地图一致性，并在有车体模型的仿真里验证运动闭环。

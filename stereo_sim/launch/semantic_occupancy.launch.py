@@ -1,9 +1,10 @@
 """Add OctoMap occupancy accumulation to the isolated semantic stereo scene."""
 
 from pathlib import Path
+import sys
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -35,4 +36,8 @@ def generate_launch_description():
                 'filter_ground': False,
             }],
             remappings=[('cloud_in', '/stereo/points2')]),
+        ExecuteProcess(
+            cmd=[sys.executable, str(root / 'scripts' / 'semantic_approach_planner.py'),
+                 '--ros-args', '-p', 'use_sim_time:=true'],
+            output='screen'),
     ])
