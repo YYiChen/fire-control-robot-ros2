@@ -16,6 +16,7 @@ def generate_launch_description():
     default_world = str(root / 'worlds' / 'stereo_test.world')
     world = LaunchConfiguration('world')
     models = str(root / 'models')
+    turtlebot_models = str(Path(get_package_share_directory('turtlebot3_gazebo')) / 'models')
     existing_models = os.environ.get('GAZEBO_MODEL_PATH', '')
     gazebo_share = get_package_share_directory('gazebo_ros')
 
@@ -25,7 +26,8 @@ def generate_launch_description():
             'world', default_value=default_world,
             description='SDF world file containing the stereo rig and known-distance target.'),
         SetEnvironmentVariable(
-            'GAZEBO_MODEL_PATH', models + (':' + existing_models if existing_models else '')),
+            'GAZEBO_MODEL_PATH', ':'.join(
+                part for part in (models, turtlebot_models, existing_models) if part)),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(str(Path(gazebo_share) / 'launch' / 'gzserver.launch.py')),
             launch_arguments={'world': world}.items()),

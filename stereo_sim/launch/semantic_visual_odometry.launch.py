@@ -14,9 +14,11 @@ def generate_launch_description():
     root = Path(__file__).resolve().parents[1]
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='false'),
+        DeclareLaunchArgument('world', default_value=str(root / 'worlds' / 'semantic_panel.world')),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(str(root / 'launch' / 'stereo_odometry_audit.launch.py')),
-            launch_arguments={'gui': LaunchConfiguration('gui')}.items()),
+            launch_arguments={'gui': LaunchConfiguration('gui'),
+                              'world': LaunchConfiguration('world')}.items()),
         ExecuteProcess(
             cmd=[sys.executable, str(root / 'scripts' / 'semantic_panel_node.py'),
                  '--ros-args', '-p', 'use_sim_time:=true', '-p', 'pose_source:=odometry'],
