@@ -206,3 +206,11 @@ python3 ~/stereo_sim/scripts/verify_semantic_approach_synthetic.py
 ```
 
 受控地图测试得到 16 个路点，绕过中间障碍的最大横向位移约 0.138 m；将通道堵死后状态为 `no_known_free_path`，输出空路径。当前实际的单视角双目场景中，OctoMap 投影虽然有约 300 个空闲格，但空闲扇区不足以容纳 7 cm 足迹，规划器输出 `start_or_goal_not_free`，不输出路径。要让它在真实场景给出安全路线，需增加视角覆盖或使用已有 2D 激光地图/导航图，解决定位与地图一致性，并在有车体模型的仿真里验证运动闭环。
+
+### 多视角扫掠后实际给出路径
+
+```bash
+~/stereo_sim/scripts/run_multiview_approach_test.sh
+```
+
+该脚本在独立的 `ROS_DOMAIN_ID=81` / Gazebo 端口 `11381` 中，利用 Gazebo 服务逐步移动**仿真相机**到八个视角，逐步累积 OctoMap，然后检查建议路径。2026-09-23 实测：初始投影有 214 个已知空闲格，前七个视角仍拒绝规划；最后相机到 `x=0.12, y=0` 后有 513 个已知空闲格，状态变为 `ready`，输出 8 个路点，终点距 `reset` 按钮 0.249 m，路径中 0 个路点落入占据/未知格。该脚本不操作 TurtleBot 或真实硬件；相机移动是受控实验动作，不能替代底盘导航闭环。
