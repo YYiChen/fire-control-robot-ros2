@@ -214,3 +214,23 @@ python3 ~/stereo_sim/scripts/verify_semantic_approach_synthetic.py
 ```
 
 该脚本在独立的 `ROS_DOMAIN_ID=81` / Gazebo 端口 `11381` 中，利用 Gazebo 服务逐步移动**仿真相机**到八个视角，逐步累积 OctoMap，然后检查建议路径。2026-09-23 实测：初始投影有 214 个已知空闲格，前七个视角仍拒绝规划；最后相机到 `x=0.12, y=0` 后有 513 个已知空闲格，状态变为 `ready`，输出 8 个路点，终点距 `reset` 按钮 0.249 m，路径中 0 个路点落入占据/未知格。该脚本不操作 TurtleBot 或真实硬件；相机移动是受控实验动作，不能替代底盘导航闭环。
+
+## 双目视觉里程计审计：逐步移除仿真真值捷径
+
+使用 [RTAB-Map 官方 ROS2 双目里程计](https://github.com/introlab/rtabmap_ros) 做**独立审计**；它目前尚未接管前述语义/OctoMap 主链。WSL 中仅补装所需包（本机 apt 报告 0 升级、14 新装）：
+
+```bash
+sudo apt install ros-humble-rtabmap-odom
+~/stereo_sim/scripts/run_stereo_odometry_audit.sh
+```
+
+审计在 `ROS_DOMAIN_ID=82` / Gazebo 端口 `11382` 运行。发现 Gazebo 多相机插件将左右 `CameraInfo.P[3]` 都发布为约 `-30`；RTAB-Map 因两个投影平移相同而判断基线为 0。审计支路的 `normalize_stereo_camera_info.py` 只将左目 `P[3]` 归零，保留右目的 `-fx×0.06 m`，原话题和当前工作链不变。节点使用 `stereo_base_link → stereo_left_camera_optical_frame` 静态 TF 和 RTAB-Map `Reg/Force3DoF=true`，其 2D 运动约束因此作用在竖直朝上的基座坐标系，而非光学坐标系。
+
+2026-09-24 两次独立无界面重复：相机平滑前进 0.10 m、横移 0.05 m、转向 0.08 rad；真值只交给审计验证器，RTAB-Map 仅收双目校正图、相机参数和固定的基座到相机外参。结果如下：
+
+| 运行 | 最终平移向量误差 | 最终偏航误差 | /vo/odom 消息数 | 结果 |
+|---|---:|---:|---:|---|
+| 1 | 0.0051 m | 0.0096 rad | 643 | 通过审计阈值 |
+| 2 | 0.0021 m | 0.0047 rad | 617 | 通过审计阈值 |
+
+测试中单个中途样本仍可能出现约 1 cm 的横向波动，因此最终误差不足以证明全过程毫米级稳定；尚需多场景、往返/回环、遮挡、低纹理和机器人运动的基准测试。**此审计证明该配置有望替换 Gazebo 真值，尚未证明当前语义地图/路径链已完成替换。**

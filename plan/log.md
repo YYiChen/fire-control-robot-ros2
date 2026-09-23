@@ -194,3 +194,11 @@
 - **validation performed**：隔离 `ROS_DOMAIN_ID=81` / Gazebo 端口 `11381` 无界面运行通过。初始 OctoMap 投影已知空闲格 214；前七个视角维持 `start_or_goal_not_free`；最后相机在 `(0.12, 0)` 后空闲格 513，状态 `ready`，输出 8 个路点，终点距 reset 按钮 0.249 m，路径 0 个路点落入占据或未知格。静态及 Git 检查见本 target 最终验证。
 - **boundary**：这是 Gazebo 服务移动相机且姿态使用真值 TF 的受控实验，未证明实际车体能跟踪路径、自动探索，也未验证机械臂按压或实机感知。
 - **commit status**：本 target 文件随本次根仓库提交保存；远端推送结果在提交后确认。
+
+## 2026-09-24 —— RTAB-Map 双目视觉里程计与真值审计
+
+- **target**：独立评价 RTAB-Map 双目视觉里程计是否能取代现有语义/地图链中的 Gazebo 真值位姿。
+- **changed areas**：WSL Humble 仅安装 `ros-humble-rtabmap-odom` 和 13 个新依赖，0 旧包升级；新增隔离启动、VO 专用 CameraInfo 归一化、运动真值对照脚本；README 记录接口问题和实测误差。Gazebo 左右原始 `P[3]` 均约 -30，VO 支路修正左目为 0 后保留右目 -30；基座到相机 TF 与 `Reg/Force3DoF=true` 让平面运动约束作用在 z-up 基座。
+- **validation performed**：`ROS_DOMAIN_ID=82` / Gazebo 端口 `11382` 无界面两次独立运行，平滑执行 x=+0.10 m、y=+0.05 m、yaw=+0.08 rad；最终位置向量误差分别 0.0051/0.0021 m，偏航误差 0.0096/0.0047 rad，收到 643/617 个 `/vo/odom` 消息。真值仅供验证器比较，VO 节点不订阅 `/model_states`。静态及 Git 检查见本 target 最终验证。
+- **boundary**：短程受控结果支持继续集成，尚未替换语义地图链的真值 TF；中途位姿有约厘米级波动，未验证长程、回环、遮挡或实际相机标定。
+- **commit status**：本 target 文件随本次根仓库提交保存；远端推送结果在提交后确认。
