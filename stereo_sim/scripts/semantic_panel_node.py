@@ -240,10 +240,13 @@ class SemanticPanelNode(Node):
         image_points = corners[int(matches[0])].reshape(4, 2).astype(np.float32)
         intrinsic = np.asarray(self.camera_info.k, dtype=np.float64).reshape(3, 3)
         distortion = np.asarray(self.camera_info.d, dtype=np.float64)
-        solved, _rotation, translation = cv2.solvePnP(
+        solved, rotation_vector, translation = cv2.solvePnP(
             object_points, image_points, intrinsic, distortion,
             flags=cv2.SOLVEPNP_ITERATIVE)
         if not solved or not np.isfinite(translation).all() or translation[2, 0] <= 0:
+            return None
+        pose_rotation = cv2.Rodrigues(rotation_vector)[0]
+        if not np.isfinite(pose_rotation).all():
             return None
         # A small, nearly frontal square can have an unstable PnP rotation.
         # Use the observed corner directions to define its in-plane axes.
@@ -261,7 +264,7 @@ class SemanticPanelNode(Node):
         vertical /= np.linalg.norm(vertical)
         normal = np.cross(horizontal, vertical)
         marker_rotation = np.column_stack((horizontal, vertical, normal))
-        return marker_rotation, translation[:, 0], image_points
+        return marker_rotation, pose_rotation, translation[:, 0], image_points
 
     def process(self, image, disparity):
         stamp = stamp_seconds(image.header.stamp)
@@ -299,7 +302,7 @@ class SemanticPanelNode(Node):
             self.publish_camera_tf(image.header.stamp, camera_origin,
                                    quat_multiply(q_rig, optical_to_model_quat()), frame)
         if marker is not None:
-            marker_rotation, marker_optical, marker_corners = marker
+            marker_rotation, pose_rotation, marker_optical, marker_corners = marker
             p_model = (marker_optical[2], -marker_optical[0], -marker_optical[1])
             p_rotated = rotate(q_rig, p_model)
             marker_world = tuple(camera_origin[i] + p_rotated[i] for i in range(3))
@@ -309,7 +312,7 @@ class SemanticPanelNode(Node):
             marker_pose.pose.position.x, marker_pose.pose.position.y, marker_pose.pose.position.z = marker_world
             marker_quat = quat_multiply(
                 quat_multiply(q_rig, optical_to_model_quat()),
-                matrix_to_quat(marker_rotation))
+                matrix_to_quat(pose_rotation))
             (marker_pose.pose.orientation.x, marker_pose.pose.orientation.y,
              marker_pose.pose.orientation.z, marker_pose.pose.orientation.w) = marker_quat
             self.marker_pose_publisher.publish(marker_pose)
@@ -320,7 +323,10 @@ class SemanticPanelNode(Node):
             panel_tf.transform.rotation = marker_pose.pose.orientation
             self.tf_broadcaster.sendTransform(panel_tf)
             cv2.polylines(bgr, [marker_corners.astype(np.int32)], True, (0, 255, 255), 2)
-            statuses['aruco_582'] = {'map_xyz_m': [round(x, 4) for x in marker_world]}
+            normal = rotate(marker_quat, (0.0, 0.0, 1.0))
+            statuses['aruco_582'] = {
+                'map_xyz_m': [round(x, 4) for x in marker_world],
+                'normal_map_xyz': [round(x, 4) for x in normal]}
         else:
             statuses['aruco_582'] = 'not_detected'
         markers = MarkerArray()

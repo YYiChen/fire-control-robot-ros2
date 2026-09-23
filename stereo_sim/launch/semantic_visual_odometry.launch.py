@@ -15,6 +15,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='false'),
         DeclareLaunchArgument('world', default_value=str(root / 'worlds' / 'semantic_panel.world')),
+        DeclareLaunchArgument('stand_off_m', default_value='0.25'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(str(root / 'launch' / 'stereo_odometry_audit.launch.py')),
             launch_arguments={'gui': LaunchConfiguration('gui'),
@@ -44,6 +45,7 @@ def generate_launch_description():
             remappings=[('cloud_in', '/vo/points2')]),
         ExecuteProcess(
             cmd=[sys.executable, str(root / 'scripts' / 'semantic_approach_planner.py'),
-                 '--ros-args', '-p', 'use_sim_time:=true', '-p', 'pose_source:=odometry'],
+                 '--ros-args', '-p', 'use_sim_time:=true', '-p', 'pose_source:=odometry',
+                 '-p', ['stand_off_m:=', LaunchConfiguration('stand_off_m')]],
             output='screen'),
     ])

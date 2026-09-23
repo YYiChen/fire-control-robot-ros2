@@ -18,11 +18,13 @@ def generate_launch_description():
     model_path = generate_model(root, Path.home() / 'stereo_sim_generated' / 'stereo_mobile_bot.sdf')
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='false'),
+        DeclareLaunchArgument('stand_off_m', default_value='0.25'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(str(root / 'launch' / 'semantic_visual_odometry.launch.py')),
             launch_arguments={
                 'gui': LaunchConfiguration('gui'),
                 'world': str(root / 'worlds' / 'semantic_panel_mobile.world'),
+                'stand_off_m': LaunchConfiguration('stand_off_m'),
             }.items()),
         Node(
             package='gazebo_ros', executable='spawn_entity.py',
