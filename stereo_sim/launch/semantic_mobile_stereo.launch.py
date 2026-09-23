@@ -19,11 +19,12 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='false'),
         DeclareLaunchArgument('stand_off_m', default_value='0.25'),
+        DeclareLaunchArgument('world', default_value=str(root / 'worlds' / 'semantic_panel_mobile.world')),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(str(root / 'launch' / 'semantic_visual_odometry.launch.py')),
             launch_arguments={
                 'gui': LaunchConfiguration('gui'),
-                'world': str(root / 'worlds' / 'semantic_panel_mobile.world'),
+                'world': LaunchConfiguration('world'),
                 'stand_off_m': LaunchConfiguration('stand_off_m'),
             }.items()),
         Node(

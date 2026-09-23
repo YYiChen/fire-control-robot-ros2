@@ -111,6 +111,11 @@ class SemanticPanelNode(Node):
         self.rig_pose = None
         self.rig_pose_time = None
         self.last_status_time = -1.0
+        # Marker 582 belongs to one stationary panel. Keep its yaw in the VO
+        # map frame, where several views constrain the weak frontal PnP tilt.
+        self.panel_normal_yaws = deque(maxlen=240)
+        self.panel_anchor_xy = None
+        self.button_positions = {name: deque(maxlen=240) for name in BUTTONS}
         self.tf_broadcaster = TransformBroadcaster(self)
         self.pose_publishers = {
             name: self.create_publisher(PoseStamped, f'/semantic_panel/button/{name}/pose', 10)
@@ -313,6 +318,27 @@ class SemanticPanelNode(Node):
             marker_quat = quat_multiply(
                 quat_multiply(q_rig, optical_to_model_quat()),
                 matrix_to_quat(pose_rotation))
+            raw_normal = rotate(marker_quat, (0.0, 0.0, 1.0))
+            raw_yaw = math.atan2(raw_normal[1], raw_normal[0])
+            if (self.panel_anchor_xy is None or
+                    math.dist(marker_world[:2], self.panel_anchor_xy) > 0.10):
+                self.panel_normal_yaws.clear()
+                self.panel_anchor_xy = marker_world[:2]
+                for samples in self.button_positions.values():
+                    samples.clear()
+            if not self.panel_normal_yaws:
+                self.panel_normal_yaws.append(raw_yaw)
+            else:
+                reference = float(np.median(self.panel_normal_yaws))
+                unwrapped = reference + math.atan2(
+                    math.sin(raw_yaw - reference), math.cos(raw_yaw - reference))
+                if abs(unwrapped - reference) < 0.30:
+                    self.panel_normal_yaws.append(unwrapped)
+            filtered_yaw = float(np.median(self.panel_normal_yaws))
+            correction = filtered_yaw - raw_yaw
+            marker_quat = quat_multiply(
+                (0.0, 0.0, math.sin(correction / 2.0),
+                 math.cos(correction / 2.0)), marker_quat)
             (marker_pose.pose.orientation.x, marker_pose.pose.orientation.y,
              marker_pose.pose.orientation.z, marker_pose.pose.orientation.w) = marker_quat
             self.marker_pose_publisher.publish(marker_pose)
@@ -326,7 +352,8 @@ class SemanticPanelNode(Node):
             normal = rotate(marker_quat, (0.0, 0.0, 1.0))
             statuses['aruco_582'] = {
                 'map_xyz_m': [round(x, 4) for x in marker_world],
-                'normal_map_xyz': [round(x, 4) for x in normal]}
+                'normal_map_xyz': [round(x, 4) for x in normal],
+                'normal_samples': len(self.panel_normal_yaws)}
         else:
             statuses['aruco_582'] = 'not_detected'
         markers = MarkerArray()
@@ -372,10 +399,20 @@ class SemanticPanelNode(Node):
             if marker_residual is None or marker_residual > 0.025:
                 statuses[name] = f'marker_stereo_disagreement:{marker_residual:.3f}'
                 continue
+            samples = self.button_positions[name]
+            if samples:
+                centre = np.median(np.asarray(samples), axis=0)
+                if math.dist(position, centre) > 0.06:
+                    statuses[name] = 'inconsistent_static_button_position'
+                    continue
+            samples.append(position)
+            stable_position = tuple(float(value) for value in
+                                    np.median(np.asarray(samples), axis=0))
             pose = PoseStamped()
             pose.header.stamp = image.header.stamp
             pose.header.frame_id = 'map'
-            pose.pose.position.x, pose.pose.position.y, pose.pose.position.z = position
+            (pose.pose.position.x, pose.pose.position.y,
+             pose.pose.position.z) = stable_position
             pose.pose.orientation.w = 1.0
             self.pose_publishers[name].publish(pose)
             display_marker = Marker()
@@ -396,7 +433,9 @@ class SemanticPanelNode(Node):
                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
             statuses[name] = {'pixel': [round(u, 1), round(v, 1)],
                               'depth_m': round(depth, 4),
-                              'map_xyz_m': [round(x, 4) for x in position],
+                              'map_xyz_m': [round(x, 4) for x in stable_position],
+                              'raw_map_xyz_m': [round(x, 4) for x in position],
+                              'position_samples': len(samples),
                               'marker_prediction_xyz_m': ([round(x, 4) for x in predicted_world]
                                                           if marker is not None else None),
                               'marker_residual_m': (round(marker_residual, 4)

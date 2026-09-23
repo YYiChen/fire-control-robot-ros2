@@ -144,7 +144,7 @@ class SemanticPathFollower(Node):
         if (self.last_ready_goal is not None and
                 now - self.last_ready_goal_time <= 3.0 and
                 math.hypot(p.x - self.last_ready_goal[0],
-                           p.y - self.last_ready_goal[1]) <= 0.025):
+                           p.y - self.last_ready_goal[1]) <= 0.035):
             self.arrived = True
             self.arrival_goal = [round(value, 4) for value in self.last_ready_goal]
             self.publish('arrived', approach_xy_m=self.arrival_goal)
