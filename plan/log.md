@@ -162,3 +162,11 @@
 
 - **问题**：用户首次运行预检时，`/opt/ros/humble/setup.bash` 在 `set -u` 环境下读取未定义的 `AMENT_TRACE_SETUP_FILES`，导致预检未开始。
 - **修复与验证**：将 `set -u` 移到 ROS setup 完成之后；实际 WSL 预检已完整通过。
+
+## 2026-09-23 —— 双目语义面板三维定位仿真
+
+- **target**：在无实机的 Gazebo 仿真中，把左目画面的具名按钮、双目视差测距、ArUco 面板基准和 `map` 三维坐标接起来，验证相机/面板位置变化时的稳定性及失效保护。
+- **changed areas**：新增静态三按钮面板和 ArUco Original 582 模型、语义场景/启动、逐帧按钮检测与视差融合节点、位置真值验证和失效测试、README 实验步骤；`.gitattributes` 固定双目实验 Bash 脚本为 LF 换行，避免 Windows Git 自动转换后无法在 WSL 运行。仿真节点使用 Gazebo `/model_states` 取得相机真值位姿，仅用于本阶段验证；未连接底盘、机械臂或实机。
+- **validation performed**：WSL2 ROS Humble 下的独立 `ROS_DOMAIN_ID=78` 与 Gazebo 端口 `11378` 无界面测试，面板 0.60 m 正向和 0.75 m/偏航 -0.06 rad 两个场景均通过。相机移动前后，三个按钮各有连续位姿更新，图像位移约 4–17 px；相对 Gazebo 几何真值的三维误差中位数在两场景中为 1–3 mm。另以合成 ROS 消息验证二维码缺失及视差无效时均不发布按钮位置。Python 编译、Bash 语法、SDF/XML 解析、`git diff --check` 通过；实验结束后隔离 ROS 域无节点，未见实验进程残留。
+- **boundary**：色彩与二维码属于受控仿真目标；当前没有真实相机标定、机器人自身定位/手眼 TF、语义三维占据地图、主动避障和机械臂按压闭环，不能把理想场景的毫米数值作为实机精度结论。
+- **commit status**：本 target 文件随本次根仓库提交保存；远端推送结果在提交后确认。

@@ -1,6 +1,8 @@
 # 双目仿真：第一阶段验证
 
-这一目录只验证**仿真相机的左右图像是否能形成视差和点云**。它不会启动底盘、导航、机械臂、工控机驱动或任何真实设备。
+这一目录分两阶段验证**双目测距**以及**画面按钮与三维坐标的关联**。它不会启动底盘、导航、机械臂、工控机驱动或任何真实设备。
+
+第二阶段另有一个带 ArUco 和三个具名按钮的仿真场景，用于验证画面识别、双目测距和三维坐标关联。见下文“语义面板实验”。
 
 ## 本轮固定设计
 
@@ -119,4 +121,58 @@ ros2 launch ~/stereo_sim/launch/stereo_processing.launch.py \
   left_camera_info_topic:=/实际左相机信息话题 \
   right_image_topic:=/实际右图话题 \
   right_camera_info_topic:=/实际右相机信息话题
+```
+
+## 语义面板实验：画面按钮与三维地图坐标关联
+
+将此目录复制到 WSL 的 `~/stereo_sim`，然后运行：
+
+```bash
+source /opt/ros/humble/setup.bash
+chmod +x ~/stereo_sim/scripts/*.sh
+~/stereo_sim/scripts/run_semantic_panel_test.sh
+python3 ~/stereo_sim/scripts/verify_semantic_panel_faults.py
+```
+
+第一条测试在独立的 `ROS_DOMAIN_ID=78` 和 Gazebo 端口 `11378` 中启动无界面场景，自动移动双目相机，核验坐标后关闭本次启动的进程。第二条用合成 ROS 消息验证失效保护，不启动 Gazebo。两条均不启动底盘、导航、机械臂或实机设备。
+
+若想在 Gazebo 图形界面观察同一场景，另开 WSL 终端运行：
+
+```bash
+source /opt/ros/humble/setup.bash
+ros2 launch ~/stereo_sim/launch/semantic_panel.launch.py gui:=true
+```
+
+主要输出：
+
+| 话题 / TF | 含义 |
+|---|---|
+| `/semantic_panel/annotated_image` | 左目画面中的按钮框、名称及测距 |
+| `/semantic_panel/button/{mute,reset,confirm}/pose` | 具名按钮在 `map` 中的三维位置 |
+| `/semantic_panel/marker_pose`、`map → panel_marker_582` | ArUco 582 的三维基准 |
+| `/semantic_panel/markers` | RViz 中的三个按钮球形标记 |
+| `/semantic_panel/status` | 每次处理的检测状态、像素、深度、世界坐标、一致性误差 |
+| `/stereo/points2` | 场景的双目点云；当前仅有 XYZ，无语义标签 |
+
+节点按时间戳配对左图与视差，从仿真按钮颜色提取三个目标，求出按钮中心深度，并用 ArUco 位置/方向检查按钮是否与同一面板相符。只有有效深度且一致性误差不超过 2.5 cm 才发布按钮位置。`map → stereo_left_camera_optical_frame` 由 Gazebo 模型真值产生，**这是仿真测试的捷径**，不能当成实机定位实现。
+
+2026-09-23 本机 WSL2/ROS Humble 无界面测试结果（每个场景都含相机移动前、后两段）：
+
+| 场景 | 面板位置与偏航 | 按钮三维误差中位数（mute/reset/confirm） | 图像位移 | 结果 |
+|---|---|---|---|---|
+| A | x=0.60 m, y=0, yaw=0 | 3/1/2 mm | 16.0/4.5/8.9 px | 通过 |
+| B | x=0.75 m, y=0.02 m, yaw=-0.06 rad | 2/1/2 mm | 16.7/9.0/4.2 px | 通过 |
+
+失效测试也通过：遮去 ArUco 后三个按钮均不输出位置；视差全无效时也均不输出位置。这些数值属于**已知尺寸、理想配色、Gazebo 真值相机位姿**的封闭场景，尚未测量标定误差、反光/遮挡、任意真实按钮、机器人位姿漂移，也尚未形成 RTAB-Map 三维占据地图、路径规划或机械臂按压闭环。当前左目用原图，而视差由校正图计算；仿真相机无畸变所以可对齐，实机必须使用同一校正坐标系。毫米级表中结果不可直接外推到真实消防控制室。
+
+若调整面板位置，可在 WSL 内生成场景并复测，例如：
+
+```bash
+python3 ~/stereo_sim/scripts/generate_semantic_panel_world.py \
+  --template ~/stereo_sim/worlds/semantic_panel.world \
+  --output ~/stereo_sim/worlds/semantic_panel_shifted.world \
+  --panel-x 0.75 --panel-y 0.02 --panel-yaw -0.06
+SEMANTIC_WORLD=~/stereo_sim/worlds/semantic_panel_shifted.world \
+SEMANTIC_PANEL_X=0.75 SEMANTIC_PANEL_Y=0.02 SEMANTIC_PANEL_YAW=-0.06 \
+  ~/stereo_sim/scripts/run_semantic_panel_test.sh
 ```
