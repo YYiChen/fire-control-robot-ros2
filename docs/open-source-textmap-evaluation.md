@@ -80,6 +80,14 @@ observation_count: 5759
 
 逐次结构化记录保存在 WSL `~/textmap_evaluation/output/nav2_retest/nav2_retest_20260924.json`；时间审计脚本只在 WSL `~/textmap_evaluation/harness/` 新增，未修改固定上游源码。Gazebo harness 未提供可用的模型真值话题/服务，因此里程计不冒充真值。完整文字导航仍未通过。
 
+### 平面稳定候选与短程 Nav2 复验（2026-09-24）
+
+在独立 `planar_stability` harness 中，保留 stock Burger 的轮驱、碰撞与传感器，仅加载一个对 `base_link` roll/pitch 施加恢复力矩的 Gazebo 测试插件。它不是物理防倾倒结构，也没有接入项目正式启动流程。此前的 22 秒低速运动/轻触静态墙序列中，候选最大 roll/pitch 约 0.823°/2.345°；同序列无约束 stock 对照约 1.432°/13.653°。Gazebo 接触流仍报告底盘撞墙及车轮/脚轮接地。相同 0.25 rad/s 原地转向 4 秒时，候选 `/odom` yaw 约 0.985 rad，stock 约 0.991 rad。
+
+候选模型随后两次冷启动运行 Nav2，从 map `(-6.5,-1.0)` 导航到 `(-6.5,-1.8)`，两次 NavigateToPose 均返回 `SUCCEEDED`，约 7.8 秒完成。第二次运行 `/scan` 与 `/odom` 约 29.4 Hz、最大间隔约 34 ms；IMU 约 166.7 Hz、最大间隔约 6 ms；`map→odom` 和 `odom→base_footprint` TF 约 29.4 Hz、最大间隔约 34 ms。按 TF 消息到达时刻配对的中位差约 1 ms，AMCL 的 `map→odom` header stamp 则固定领先 odom TF 1 秒，与 `transform_tolerance=1.0 s` 配置相符。短程移动期间未观察到此前的 `map→odom` 数据过旧报错；启动 global costmap 时出现过一次短暂的向过去外推等待，随后 costmap 正常启动。最终 Nav2 feedback 剩余距离约 0.04 m，候选 IMU 最大绝对 roll/pitch 约 0.003°/0.090°。
+
+该结果只通过短程空旷路线的仿真门，不解释 stock 长程失败的根因，也没有复验长程路线、复杂碰撞、窄通道、导航过程中的接触或地图/世界全局对齐。短程成功不代表长程旧 TF 问题已修复；候选插件不能用于真实机器人。结构化数据和 probe 保存在 WSL `~/textmap_evaluation/output/planar_stability/nav2_short_route_stabilized.json` 与 `~/textmap_evaluation/harness/planar_stability/nav2_short_route_probe.py`。
+
 `Exit` bridge 命令没有发送。固定上游 bridge 的 ray-march 仍把目标选在离南墙约 0.126 m 处；这个距离小于 Burger `robot_radius=0.22 m`，也没有足迹净空保证。不能用 3D 地标表面点代替墙前停靠目标。
 
 ## 实现边界与对本项目的适配

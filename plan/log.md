@@ -331,3 +331,11 @@
 - **validation performed**：手动延迟激活使两个 lifecycle manager 多次返回成功，controller active 且短程 Nav2 目标可运行。5 Hz 安全观察位 action 返回成功，但同一时间戳 map/odom 相差约 0.309 m，最终 map 位姿距目标约 0.097 m。30 Hz 长程同一目标两次未通过：一次 `ABORTED` 并报无有效轨迹/前方碰撞；另一次 60 秒无 action 结果，途中 TF 与里程计组成位姿严重分离、控制器报 `map→odom` 数据过旧，随后观察到车体倾斜并立即停止仿真。另做 20 秒无目标静止审计，scan/odom/map→odom 分别约 29.27/29.32/30.07 Hz，最大间隔 0.034 s，说明静止时序正常。
 - **boundary**：没有连接实机。Gazebo 模型真值接口不可用，不把 odom 当成绝对真值；测试 SDF 是未限制 roll/pitch 的 stock Burger 副本，静止 TF 正常不能解释运动时的陈旧变换。运动期根因、地图/世界对齐和车体翻滚的先后因果尚未分离；`text_nav_bridge` 的 Exit 命令没有发送，长程安全导航 gate 未通过，plan 保持未完成。
 - **commit status**：target-only commit `b8a4a77` pushed to `origin/main`; preserve all pre-existing untracked user files.
+
+## 2026-09-24 —— Burger 平面稳定候选与短程 Nav2 复验
+
+- **target**：只在 Gazebo 隔离模型上抑制非期望 roll/pitch，同时保留差速轮驱、碰撞和 x/y/yaw；通过稳定性与短程导航门后采集 IMU、scan、odom、TF 和 NavigateToPose 结果。
+- **changed areas**：更新本 target plan 与 `docs/open-source-textmap-evaluation.md`；WSL 用户目录 `~/textmap_evaluation/harness/planar_stability/` 新增 roll/pitch 恢复力矩插件、隔离 SDF/launch 和短程 Nav2 probe；结构化数据写入 `~/textmap_evaluation/output/planar_stability/`。没有修改系统 ROS、`~/ros2_ws`、固定上游源码、用户 Gazebo 场景或实机。
+- **validation performed**：串联 x/y/yaw 关节方案因转向退化被 stock 对照否决。PD 恢复力矩候选在 22 s 含墙面低速轻触的序列中最大 roll/pitch 约 0.823°/2.345°，Gazebo contacts 保持启用；stock 对照约 1.432°/13.653°。相同 0.25 rad/s、4 s 原地转向下候选 odom/IMU yaw 约 0.985/0.988 rad，stock 约 0.991/0.993 rad。候选冷启动两次的 0.8 m Nav2 目标均 `SUCCEEDED`（约 7.8 s）。第二次 `/scan`、`/odom`、TF 约 29.4 Hz，最大间隔 0.034 s；IMU 约 166.7 Hz，最大间隔 0.006 s；同接收时刻 TF 配对中位间隔 0.001 s，map→odom stamp 因 1 s AMCL transform tolerance 固定领先。移动期未见旧 TF 错误；costmap 启动阶段有一次短暂向过去外推等待后恢复。Python 编译通过。
+- **boundary**：这只是 Gazebo 仿真恢复力矩原型，不是实机防翻方案。Nav2 仅测空旷短路线；stock 长程失败、复杂碰撞、窄通道、长时间运行、运动中接触及 map/world 对齐仍未复验，不能宣称长程旧 TF 已修复。结束后没有 target 的 Gazebo/Nav2/probe 进程；未动 ROS CLI 后台发现服务和其他用户进程。
+- **commit status**：待 target-only 审核、`git diff --check` 与提交；已有未跟踪场景、`log/` 与 `rec.bak` 不纳入。
