@@ -94,6 +94,8 @@ class StereoPanelDepthNode(Node):
         self.bridge = CvBridge()
         self.images = deque(maxlen=6)
         self.clouds = deque(maxlen=6)
+        self.image_arrivals = {}
+        self.active_timing = None
         self.last_process_wall = 0.0
         self.poses = {
             key: self.create_publisher(PoseStamped, f'/stereo_panel/{key}/pose', 10)
@@ -108,6 +110,11 @@ class StereoPanelDepthNode(Node):
             self.on_cloud, qos_profile_sensor_data)
 
     def on_image(self, msg):
+        stamp = (msg.header.stamp.sec, msg.header.stamp.nanosec)
+        self.image_arrivals[stamp] = time.monotonic()
+        if len(self.image_arrivals) > 120:
+            for old_stamp in list(self.image_arrivals)[:-90]:
+                self.image_arrivals.pop(old_stamp, None)
         self.images.append(msg)
         self.try_process()
 
@@ -141,11 +148,34 @@ class StereoPanelDepthNode(Node):
         del self.images[image_index]
         del self.clouds[cloud_index]
         self.last_process_wall = time.monotonic()
+        stamp = (image.header.stamp.sec, image.header.stamp.nanosec)
+        self.active_timing = {
+            'pair_started_monotonic': self.last_process_wall,
+            'image_arrival_monotonic': self.image_arrivals.get(stamp),
+            'image_conversion_sec': None,
+            'marker_detection_sec': None,
+            'ocr_sec': None,
+            'point_cloud_association_sec': None,
+        }
         self.process_pair(image, cloud, delta)
 
     def publish_status(self, stamp, frame_id, state, labels=None, **extra):
         report = {'stamp': [stamp.sec, stamp.nanosec], 'frame_id': frame_id,
                   'state': state, 'labels': labels or {}, **extra}
+        timing = self.active_timing
+        if timing is not None:
+            now = time.monotonic()
+            report['timings_sec'] = {
+                'input_to_publish': round(
+                    now - timing['image_arrival_monotonic'], 6)
+                if timing['image_arrival_monotonic'] is not None else None,
+                'pair_processing': round(
+                    now - timing['pair_started_monotonic'], 6),
+                'image_conversion': timing['image_conversion_sec'],
+                'marker_detection': timing['marker_detection_sec'],
+                'ocr': timing['ocr_sec'],
+                'point_cloud_association': timing['point_cloud_association_sec'],
+            }
         message = String()
         message.data = json.dumps(report, ensure_ascii=False, sort_keys=True)
         self.status_publisher.publish(message)
@@ -159,19 +189,31 @@ class StereoPanelDepthNode(Node):
                                 image_size=[image_msg.width, image_msg.height],
                                 cloud_size=[cloud.width, cloud.height])
             return
+        conversion_started = time.monotonic()
         try:
             bgr = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding='bgr8')
         except Exception as exc:  # cv_bridge error types vary across ROS builds.
+            if self.active_timing is not None:
+                self.active_timing['image_conversion_sec'] = round(
+                    time.monotonic() - conversion_started, 6)
             self.publish_status(stamp, cloud.header.frame_id,
                                 'image_conversion_failed', error=str(exc))
             return
 
+        if self.active_timing is not None:
+            self.active_timing['image_conversion_sec'] = round(
+                time.monotonic() - conversion_started, 6)
+        marker_started = time.monotonic()
         marker_transform = marker_homography(bgr)
+        if self.active_timing is not None:
+            self.active_timing['marker_detection_sec'] = round(
+                time.monotonic() - marker_started, 6)
         if marker_transform is None:
             self.publish_status(stamp, cloud.header.frame_id, 'marker_not_detected',
                                 image_cloud_delta_sec=round(pair_delta, 6))
             return
         temporary_path = None
+        ocr_started = time.monotonic()
         try:
             with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp:
                 temporary_path = Path(temp.name)
@@ -181,6 +223,9 @@ class StereoPanelDepthNode(Node):
                 temporary_path, Path(self.get_parameter('tesseract').value),
                 Path(self.get_parameter('tessdata').value))
         except Exception as exc:
+            if self.active_timing is not None:
+                self.active_timing['ocr_sec'] = round(
+                    time.monotonic() - ocr_started, 6)
             self.publish_status(stamp, cloud.header.frame_id, 'perception_failed',
                                 error=str(exc),
                                 image_cloud_delta_sec=round(pair_delta, 6))
@@ -188,6 +233,9 @@ class StereoPanelDepthNode(Node):
         finally:
             if temporary_path is not None:
                 temporary_path.unlink(missing_ok=True)
+        if self.active_timing is not None:
+            self.active_timing['ocr_sec'] = round(
+                time.monotonic() - ocr_started, 6)
         if not marker_found:
             self.publish_status(stamp, cloud.header.frame_id, 'marker_not_detected',
                                 image_cloud_delta_sec=round(pair_delta, 6))
@@ -206,6 +254,7 @@ class StereoPanelDepthNode(Node):
                                 image_cloud_delta_sec=round(pair_delta, 6))
             return
         labels = {}
+        association_started = time.monotonic()
         for chinese_label, topic_key in LABEL_TOPICS.items():
             item = predictions.get(chinese_label)
             if item is None:
@@ -248,6 +297,9 @@ class StereoPanelDepthNode(Node):
                 'state': 'ok'}
         state = ('ok' if all(labels.get(key, {}).get('state') == 'ok'
                              for key in LABEL_TOPICS.values()) else 'partial')
+        if self.active_timing is not None:
+            self.active_timing['point_cloud_association_sec'] = round(
+                time.monotonic() - association_started, 6)
         self.publish_status(
             stamp, cloud.header.frame_id, state, labels,
             image_cloud_delta_sec=round(pair_delta, 6),
