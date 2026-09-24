@@ -274,3 +274,11 @@
 - **validation performed**：WSL OpenCV/Pillow 环境实际运行 11 图（10 图计分、1 图标记遮挡门控）；29 个可见文字识别 27 个、28 个可见灯态判对 26 个、26 个条件输出坐标的标记平面误差中位数约 0.0067 m。灯遮挡输出 unknown、字遮挡无假“火警”、标记遮挡不输出；`tilted_fire` 两处文字漏检被报告。Python 编译、Shell 语法及 Git 检查通过。
 - **boundary**：只用固定字体/布局的人造图，Tesseract 是比较用基线，不是原论文 PP-OCRv5；相对标记坐标还未实时写入 graph_map，也未使用真实相机/标注。位置误差只统计成功输出的 26 项，不能掩盖漏检。首次直接整图 OCR 因灯被并入文字行而失败，改用标记视角校正及固定面板文字区域后改善；全图统一二值化反而降低本组合成绩，已撤回。
 - **commit status**：本 target 文件单独提交；远端同步在提交后核对。
+
+## 2026-09-24 —— Gazebo 左目相机中文面板实拍与坐标验收
+
+- **target**：从真实 Gazebo 左目 ROS 图像话题采集合成消防面板，检查 ArUco 校正后的中文 OCR、指示灯状态和标记局部坐标，并记录它进入双目语义建图前的证据边界。
+- **changed areas**：新增独立面板模型/世界、案例可选的隔离采集脚本和真值后验验证器；评估器对 ArUco 角点增加亚像素细化；README 说明运行方法、实测数据与限制。所有生成图、模型、日志留在 WSL 用户目录。
+- **validation performed**：WSL ROS2 Humble / Gazebo Classic 实测五次独立启动（`fire_on` 三次、`all_on`、`all_off` 各一次），均由 `/stereo/stereo_rig/left/image_raw` 获取 640×480 非零时间戳图像；五次均文字 3/3、LED 3/3 正确，三个标记局部坐标误差约 0.00036/0.00076/0.00149 m。离线 11 样本回归为 29/29 文字、28/28 灯态、28 个位置样本中位误差 0.001 m，遮挡门控通过、失败列表为空。Windows 源文件与 WSL 实测副本 SHA-256 一致；Python 编译、Shell 语法、SDF/DAE XML 和 `git diff --check` 通过；ROS 域 94 无残留节点且无本世界的 Gazebo 服务进程。
+- **boundary**：数据仍完全合成，Tesseract 不是论文 PP-OCRv5；目前只在一个固定距离/视角把二维面板坐标与标记关联，未做双目视差 XYZ、TF/`graph_map` 投影、运动场景和跨距离/姿态统计，不能据此宣称真实实时语义建图完成。
+- **commit status**：准备仅提交本 target 的 owned 文件；其他未跟踪场景和 `rec.bak` 未纳入。

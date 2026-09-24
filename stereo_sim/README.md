@@ -341,4 +341,21 @@ bash ~/stereo_sim/scripts/run_panel_perception_baseline.sh
 
 结果在 `~/stereo_sim_generated/panel_perception_baseline/`：`truth.json` 是生成器真值，`report.json` 包含逐样本 OCR 原文、预测灯态、`marker_local_xyz_m`、失败原因和汇总；图片同目录。报告中预测像素坐标属于**校正后的面板图**，真值像素坐标属于**原生成图**，空间误差统一在标记坐标系中比较。负例应满足：`led_occluded` 对“火警”输出 `unknown`，`text_occluded` 不凭空补“火警”，`marker_occluded` 不输出坐标或确定灯态。`position_samples` 是**成功输出坐标且目标可见的条件样本数**，不能只看其中位误差而忽略漏检。
 
-2026-09-24 WSL Tesseract 4.1.1 / OpenCV 4.5.4 一次运行：10 张可定位图中可见文本 29 项识别 27 项（召回 0.931）；可见灯态 28 项中 26 项正确（按所有可见灯计 0.929，包括文字漏检）；遮挡文字未产生“火警”假阳性，遮挡灯没有给出确定灯态；1 张标记遮挡图拒绝输出；26 个输出坐标的标记平面位置误差中位数约 0.0067 m。`tilted_fire` 的“火警”和“主电工作”漏识仍在 `failure_case_ids`，未被隐藏。整组为人工生成、固定字体/布局且使用合成图同一标记尺度，**不能外推真实相机或论文 PP-OCRv5 的性能**。目前还是离线基线，尚未发布实时 ROS 状态或将灯态持久写入图地图。
+2026-09-24 首次 WSL Tesseract 4.1.1 / OpenCV 4.5.4 运行曾得到 27/29 个可见文字、26/28 个灯态正确和 0.0067 m 位置误差中位数。后续 Gazebo 实拍发现小标记的整数角点误差被透视校正放大；加入亚像素角点细化后，重跑 10 张可定位合成图得到 **29/29 个文字、28/28 个灯态正确、28 个位置样本的误差中位数 0.001 m**，遮挡文字无“火警”假阳性、遮挡灯为 `unknown`、标记遮挡图拒绝输出，失败列表为空。这仍是固定字体/布局的人造图，**不能外推真实面板或论文 PP-OCRv5 的性能**，也不代表灯态已经实时写入图地图。
+
+## Gazebo 双目相机实拍中文面板
+
+```bash
+source /opt/ros/humble/setup.bash
+bash ~/stereo_sim/scripts/run_gazebo_perception_capture.sh
+bash ~/stereo_sim/scripts/run_gazebo_perception_capture.sh \
+  ~/stereo_sim_generated/perception_camera_all_on all_on
+bash ~/stereo_sim/scripts/run_gazebo_perception_capture.sh \
+  ~/stereo_sim_generated/perception_camera_all_off all_off
+```
+
+脚本在隔离的 `ROS_DOMAIN_ID=94` / Gazebo 端口 `11394` 启动测试世界，默认生成 `fire_on` 面板，也可以在输出目录后给出 `fire_on`、`all_on` 或 `all_off` 案例名。它从 `/stereo/stereo_rig/left/image_raw` 取一张带非零 ROS 时间戳的真实 Gazebo 渲染帧。生成真值与图像推理分开：验收器只在推理完成后对照 `generation.json`，检查文字召回、LED 状态和标记局部坐标。结果保存在指定的 `~/stereo_sim_generated/` 目录，包括 `gazebo_left_raw.png`、`gazebo_capture_report.json`、启动日志和生成模型。
+
+2026-09-24 五次分别重启 Gazebo 的采集均通过：`fire_on` 三次、`all_on` 一次、`all_off` 一次。每次 640×480 图像都检测到 ArUco 582，文字 3/3、LED 状态 3/3 正确；红/黄/绿各一盏亮时颜色正确，三个灯全灭时均判为 `off`。按钮相对标记的坐标误差分别约 0.00036、0.00076、0.00149 m（各次相同），低于此合成验收的 0.02 m 门槛。实拍诊断帧中标记只有约 47×47 像素，整数角点的约 1 px 误差使外推到整块面板的单应变换偏移；加入 `cornerSubPix` 后行文字回到正确 ROI。停机检查未发现 ROS 域 94 的残留节点或该世界的 Gazebo 服务进程。
+
+这证明的是一张固定、无遮挡的**合成面板纹理**可由 Gazebo 左目话题采集并在受控坐标系中完成 OCR/灯态/二维面板内坐标关联。还没有验证真实面板图像、PP-OCRv5、双目视差生成的按钮深度、按钮投影到 `graph_map`、相机/机器人移动、视角和遮挡变化或统计泛化性能。下一步应把同帧文字框/LED 中心与校正双目视差关联，得到相机坐标 XYZ，再经采集时刻 TF/图优化投影至地图，并与 Gazebo 真值做多距离、多姿态测试。

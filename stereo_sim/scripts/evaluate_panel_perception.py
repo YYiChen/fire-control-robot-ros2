@@ -73,7 +73,19 @@ def marker_homography(bgr):
     if len(matches) != 1:
         return None
     observed = corners[int(matches[0])].reshape(4, 2).astype(np.float32)
-    return cv2.getPerspectiveTransform(observed, MARKER_CANONICAL)
+    refined = observed.reshape(4, 1, 2).copy()
+    try:
+        cv2.cornerSubPix(
+            cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY), refined, (5, 5), (-1, -1),
+            (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.001))
+    except cv2.error:
+        return None
+    refined = refined.reshape(4, 2)
+    if (not np.isfinite(refined).all() or
+            np.max(np.linalg.norm(refined - observed, axis=1)) > 2.0):
+        return None
+    return cv2.getPerspectiveTransform(refined.astype(np.float32),
+                                       MARKER_CANONICAL)
 
 
 def classify_led(bgr, text_box):
