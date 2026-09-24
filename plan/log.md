@@ -306,3 +306,12 @@
 - **validation performed**：ROS2 Humble/Gazebo 无界面 smoke 通过；完整矩阵 51/51 条采集且所有模型位姿经 `/model_states` 核实。153 个标签中 OCR 正文识别 120 个（78.43%），LED 中心/有效位姿/2 cm 内定位为 117 个（76.47%），成功 XYZ 误差中位数/P95/最大值为 2.6/6.696/7.263 mm。临界诊断 30/30 条采集，90 个标签中正文识别 69 个（76.67%）、LED 中心/有效位姿 66 个（73.33%）；18 个不完整样本的失败图全部存在；计时阶段不变量零违反。节点输入到结果中位数/P95 为 1.097/1.241 s、配对后处理为 1.047/1.131 s、三行 Tesseract/图像编码调用为 1.041/1.126 s、点云关联约 2.3 ms，图像—点云时间戳差为 0。外部观测延迟中位数/P95 为 1.196/1.820 s；未采集主机 CPU 利用率。更新计时字段后原固定场景回归通过，最大 XYZ 误差 2.45 mm。Python/Shell/diff 检查通过。
 - **boundary**：只用固定 `fire_on` 合成纹理，重复帧来自同一 Gazebo 进程和固定照明；结果是仿真可行性与失败边界证据，不是统计独立样本、真实主机 OCR 泛化或实机科研验收。距离增大、正偏航与横向负偏移下存在标签/灯轮廓漏检；下一 target 需要单独比较 OCR 推理路径和模型，不应归咎于双目图像/点云时间同步。
 - **commit status**：target-only commit；未提交生成数据、图像、Gazebo 日志及用户已有未跟踪文件。
+
+## 2026-09-24 —— 双目面板 OCR 多页推理优化
+
+- **target**：在不改变三行裁剪、Tesseract PSM 7 分割和 ROS 处理频率的前提下合并文本 OCR 调用；审阅学长归档的 PP-OCR/OpenVINO 资源是否能直接在 WSL 复用。
+- **changed areas**：共享评估器新增多页 TIFF OCR 实现和调用计时；双目测距节点默认使用单 Tesseract 进程处理三页；新增逐图双路径基准器；README / target plan 记录识别速度、精度不变性和 PP-OCR 下一步复用条件。
+- **validation performed**：本地与 WSL Python 编译通过。17 张唯一图像（11 张真值合成图、6 张去重姿态失败图）每张各热运行 5 次；单次多页模式的识别文本、框、LED 状态和坐标与旧三次调用 17/17 逐图完全相同。Gazebo `fire_on`、`all_on`、`all_off` 三种双目深度测试均通过，图像/点云时间差 0，XYZ 最大误差 2.45/2.35/2.45 mm。30 条新姿态诊断全部采集，18 个失败条件及标签状态与旧路径逐项一致；OCR 正文 69/90（76.67%）、LED 中心/有效位姿 66/90（73.33%），位置误差中位数/P95/最大值 2.426/5.121/5.575 mm。节点推理段延迟中位/P95 由 1.041/1.126 s 降至 0.407/0.470 s；外部端到端由 1.196/1.820 s 降至 0.513/0.580 s。`.75 s` 处理间隔未改变。一个 all_on 仿真首次运行伴随 Gazebo `gzserver` 退出码 255 并报告错误灯态，独立新目录重跑通过；失败帧未保存，因此原因未证实。未发现仿真残留进程。
+- **source audit**：工控机归档有 C++ 检测/裁剪/识别和最多 6 框批处理代码、PP-OCRv3 detector/recognizer/字符表；CMake 使用 OpenVINO，WSL 未检测到 Paddle/PaddleOCR Python 包或 OpenVINO 动态库缓存。它不是可直接启动的 ROS2 Humble OCR 节点，也不是论文 PP-OCRv5 模型。官方 PaddleOCR 有 Linux C++ 本地部署文档和 PP-OCRv5 C++ 支持，可作为后续隔离对照方向。
+- **boundary**：这是合成图、Gazebo 固定面板的处理时延/结果一致性验证；不代表真实图像泛化、不代表工控机性能；30 条姿态重复来自同一个 Gazebo 进程，且处理仍以 0.75 s 间隔限频。输出 JSON 和失败帧仅存 WSL `~/stereo_sim_generated/panel_ocr_batch_benchmark_20260924/report_v4.json`、`panel_pose_sweep_multipage_diagnostic_20260924/` 与三个 `depth_multipage_*` 目录。
+- **commit status**：已提交，仅含本 target owned files；生成报告/图像和用户已有未跟踪文件未提交。

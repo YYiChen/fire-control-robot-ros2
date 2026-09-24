@@ -372,7 +372,7 @@ bash ~/stereo_sim/scripts/run_stereo_panel_depth_test.sh \
   ~/stereo_sim_generated/perception_depth_all_off all_off
 ```
 
-脚本在隔离的 `ROS_DOMAIN_ID=95` / Gazebo 端口 `11395` 下启动左/右相机、校正与 `/stereo/points2`。感知节点将 ArUco 矫正图中的 LED 中心反变换到左目校正图，在对应 `PointCloud2` 的 13×13 邻域读取有限 XYZ，并取中位数；图像和点云时间戳差必须不超过 25 ms。OCR 最短处理间隔设为 0.75 秒，避免对 30 Hz 图像逐帧启动三次 Tesseract。
+脚本在隔离的 `ROS_DOMAIN_ID=95` / Gazebo 端口 `11395` 下启动左/右相机、校正与 `/stereo/points2`。感知节点将 ArUco 矫正图中的 LED 中心反变换到左目校正图，在对应 `PointCloud2` 的 13×13 邻域读取有限 XYZ，并取中位数；图像和点云时间戳差必须不超过 25 ms。OCR 最短处理间隔设为 0.75 秒。三行识别各自维持独立裁剪和 PSM 7 分割，单次调用将三张裁剪编码成多页 TIFF，避免每行单独启动一次 Tesseract。
 
 具名输出为 `/stereo_panel/fire/pose`、`/stereo_panel/fault/pose`、`/stereo_panel/main_power/pose`，另有 `/stereo_panel/observation` 记录文字、灯态、采集时间、像素、有效点数量和坐标。`PoseStamped.header.frame_id` 是相机光学坐标系 `stereo_left_camera_optical_frame`；输出是**相机坐标**，尚不是机器人地图坐标。
 
@@ -404,7 +404,15 @@ bash ~/stereo_sim/scripts/run_stereo_panel_pose_sweep.sh
 
 临界条件诊断组再测 30 条，其中 18 条未满足三标签全部正确且有坐标的完整通过标准；90 个预期标签中正文识别 69 个（76.67%），LED 中心/有效位姿 66 个（73.33%）。每条失败报告均保存了相同 ROS 时间戳的左目图像。复核图像与原始 OCR 结果确认：距离增加会出现中文标签漏识，以及“主电工作”识别到但找不到灯轮廓；正偏航和 −0.25 m 横移会漏掉长标签。成功输出的点云坐标仍保持厘米门槛以内。这些现象来自当前 Tesseract/固定文字行裁剪/灯轮廓规则，不能归因于 `/stereo/points2` 同步延迟。
 
-修正统计口径后的 30 条诊断中，外部观测延迟中位数/P95 为 1.196/1.820 s；感知节点输入帧到输出为 1.097/1.241 s，配对后处理为 1.047/1.131 s，其中 Tesseract 三行串行推理及图像编码/子进程调用为 1.041/1.126 s，点云关联约 2.3 ms，标记检测约 2.5 ms。外部延迟尾部抖动大于节点内部处理抖动；目前没有采集主机 CPU 利用率，不能仅据墙钟延迟认定 CPU 饱和。旧固定距离单场景回归在加计时字段后仍通过，最大 XYZ 误差 2.45 mm。当前耗时集中在 OCR 路径；提高相机或雷达帧率不会让三行 OCR 更快。完整逐帧报告位于 WSL `~/stereo_sim_generated/panel_pose_sweep_full_20260924/`，修正统计口径并带失败图/阶段计时的临界诊断位于 WSL `~/stereo_sim_generated/panel_pose_sweep_diagnostic2_20260924/`。
+三次 Tesseract 调用版本的修正诊断基线：30 条诊断的外部观测延迟中位数/P95 为 1.196/1.820 s；感知节点输入帧到输出为 1.097/1.241 s，配对后处理为 1.047/1.131 s，其中三行 Tesseract 串行推理及图像编码/子进程调用为 1.041/1.126 s，点云关联约 2.3 ms，标记检测约 2.5 ms。外部延迟尾部抖动大于节点内部处理抖动；未采集主机 CPU 利用率，因此不能仅据墙钟延迟认定 CPU 饱和。完整逐帧报告位于 WSL `~/stereo_sim_generated/panel_pose_sweep_full_20260924/`，旧路径临界诊断位于 `~/stereo_sim_generated/panel_pose_sweep_diagnostic2_20260924/`。
+
+2026-09-24 集成多页 TIFF 后，17 张唯一图像（11 张带真值图、6 张去重的姿态失败图）上的 OCR 行、文字框、LED 状态及坐标与三次调用逐图完全相同。11 张真值图保持 29/29 可见文字、28/28 可见灯中心/灯态正确，遮挡标记负例仍拒绝输出；困难姿态图保持 11/18 文字和 10/18 LED 中心/灯态，不因优化丢失原有输出。每张图 5 次热运行中，全流程中位数由 0.994 s 降到 0.335 s。集成后 `fire_on` / `all_on` / `all_off` 双目深度仿真均通过，位置误差最大 2.45 mm。30 条姿态诊断的 OCR 中位/P95 从 1.041/1.126 s 降至 0.407/0.470 s，外部端到端中位/P95 从 1.196/1.820 s 降至 0.513/0.580 s；30 条观测中的失败条件、标签状态、坐标误差分布及图像/点云时间差与基线相同。完整报告位于 WSL `~/stereo_sim_generated/panel_ocr_batch_benchmark_20260924/report_v4.json` 和 `~/stereo_sim_generated/panel_pose_sweep_multipage_diagnostic_20260924/`。
+
+### 工控机 OCR 归档和开源实现
+
+归档包 `reference/industrial_pc_2026-09-22/packages/fire_panel_rec/` 中含 PP-OCRv3 检测/识别模型、中文字符表、C++ OCR 检测/识别器和面板状态解析代码。其 `PPOCR::ocr()` 会先检测整幅图中文字，再按文字框裁剪，并在识别器中批量处理最多 6 个文字框；ROS 节点还用了采集/处理/发布线程和有限队列。该包在 CMake 中链接 OpenVINO，归档模型是 `ch_PP-OCRv3`，不是论文提到的 PP-OCRv5。当前 WSL 没有 Paddle/PaddleOCR Python 包，系统动态库缓存也未发现 OpenVINO，因此这批源码/权重还不能直接作为 WSL 仿真节点运行。
+
+PaddleOCR 官方提供 [Linux C++ 本地 OCR 部署文档](https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/inference_deployment/local_inference/cpp/OCR.md)，官方 [v3.2.0 发布说明](https://github.com/PaddlePaddle/PaddleOCR/releases/tag/v3.2.0)也宣布了 PP-OCRv5 C++ 本地部署。后续适合用同一批合成真值图和失败图，在隔离的用户目录运行归档 PP-OCRv3 与官方 PP-OCRv5，比较召回、坐标误差和延迟后再决定仿真主路径；目前没有将此依赖安装到 ROS 系统环境。
 
 ## 中文 OCR 地标投影到图地图
 

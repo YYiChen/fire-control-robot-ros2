@@ -9,6 +9,8 @@ import json
 import math
 from pathlib import Path
 import subprocess
+import tempfile
+import time
 
 import cv2
 import numpy as np
@@ -47,6 +49,49 @@ def read_ocr(bgr, tesseract, tessdata, offset=(0, 0)):
         x1 = offset[0] + max(int(item['left']) + int(item['width']) for item in words)
         y1 = offset[1] + max(int(item['top']) + int(item['height']) for item in words)
         lines.append({'text': text,
+                      'box': [round(x0), round(y0), round(x1), round(y1)],
+                      'confidence': round(float(np.mean(
+                          [float(item['conf']) for item in words])), 1)})
+    return lines
+
+
+def read_ocr_multipage(images, tesseract, tessdata):
+    """Run the same PSM 7 OCR separately on multiple TIFF pages in one process."""
+    with tempfile.NamedTemporaryFile(suffix='.tiff', delete=False) as stream:
+        path = Path(stream.name)
+    try:
+        if not cv2.imwritemulti(str(path), images):
+            raise RuntimeError(f'Cannot encode OCR pages to {path}')
+        command = [str(tesseract), str(path), 'stdout',
+                   '--tessdata-dir', str(tessdata), '-l', 'chi_sim+eng',
+                   '--psm', '7', '-c', 'tessedit_create_tsv=1']
+        result = subprocess.run(command, capture_output=True, check=True,
+                                timeout=30)
+    finally:
+        path.unlink(missing_ok=True)
+
+    groups = {}
+    for row in csv.DictReader(io.StringIO(result.stdout.decode('utf-8')),
+                              delimiter='\t'):
+        try:
+            confidence = float(row['conf'])
+            page_num = int(row['page_num'])
+        except (TypeError, ValueError):
+            continue
+        if (confidence < 20 or not row['text'].strip() or
+                not any('\u4e00' <= char <= '\u9fff' for char in row['text'])):
+            continue
+        key = (page_num, row['block_num'], row['par_num'], row['line_num'])
+        groups.setdefault(key, []).append(row)
+    lines = []
+    for (page_num, _block, _paragraph, _line), words in groups.items():
+        words.sort(key=lambda item: int(item['left']))
+        text = ''.join(item['text'].strip().replace(' ', '') for item in words)
+        x0 = min(int(item['left']) for item in words)
+        y0 = min(int(item['top']) for item in words)
+        x1 = max(int(item['left']) + int(item['width']) for item in words)
+        y1 = max(int(item['top']) + int(item['height']) for item in words)
+        lines.append({'page_num': page_num, 'text': text,
                       'box': [round(x0), round(y0), round(x1), round(y1)],
                       'confidence': round(float(np.mean(
                           [float(item['conf']) for item in words])), 1)})
@@ -144,22 +189,7 @@ def classify_led(bgr, text_box):
     return state, centre, f'hsv_median={hue:.1f},{sat:.1f},{value:.1f}'
 
 
-def infer(image_path, tesseract, tessdata):
-    bgr = cv2.imread(str(image_path))
-    if bgr is None:
-        raise ValueError(f'Cannot read {image_path}')
-    homography = marker_homography(bgr)
-    if homography is None:
-        return [], False, {}
-    rectified = cv2.warpPerspective(bgr, homography, (960, 540),
-                                    borderValue=(150, 150, 150))
-    # Only fixed panel geometry is used here. The recognized label still comes
-    # from OCR, and the LED search is driven by its detected text box.
-    ocr = []
-    for row_y in (145, 275, 405):
-        x0, y0, x1, y1 = 290, row_y - 53, 700, row_y + 56
-        ocr.extend(read_ocr(rectified[y0:y1, x0:x1], tesseract,
-                            tessdata, offset=(x0, y0)))
+def associate_leds(rectified, ocr):
     predictions = {}
     for item in ocr:
         label = label_from_text(item['text'])
@@ -174,7 +204,69 @@ def infer(image_path, tesseract, tessdata):
                               'ocr_confidence': item['confidence'],
                               'led_state': state, 'led_center_px': centre,
                               'marker_local_xyz_m': local, 'reason': reason}
+    return predictions
+
+
+def infer(image_path, tesseract, tessdata, timing=None):
+    started = time.perf_counter()
+    bgr = cv2.imread(str(image_path))
+    if bgr is None:
+        raise ValueError(f'Cannot read {image_path}')
+    homography = marker_homography(bgr)
+    if homography is None:
+        if timing is not None:
+            timing.update({'ocr_sec': 0.0, 'total_sec': time.perf_counter() - started})
+        return [], False, {}
+    rectified = cv2.warpPerspective(bgr, homography, (960, 540),
+                                    borderValue=(150, 150, 150))
+    # Only fixed panel geometry is used here. The recognized label still comes
+    # from OCR, and the LED search is driven by its detected text box.
+    ocr = []
+    ocr_started = time.perf_counter()
+    for row_y in (145, 275, 405):
+        x0, y0, x1, y1 = 290, row_y - 53, 700, row_y + 56
+        ocr.extend(read_ocr(rectified[y0:y1, x0:x1], tesseract,
+                            tessdata, offset=(x0, y0)))
+    if timing is not None:
+        timing['ocr_sec'] = time.perf_counter() - ocr_started
+        timing['total_sec'] = time.perf_counter() - started
+    predictions = associate_leds(rectified, ocr)
     return ocr, homography is not None, predictions
+
+
+def infer_multipage(image_path, tesseract, tessdata, timing=None):
+    """Infer panel labels with one PSM 7 process over three separate TIFF pages."""
+    started = time.perf_counter()
+    bgr = cv2.imread(str(image_path))
+    if bgr is None:
+        raise ValueError(f'Cannot read {image_path}')
+    homography = marker_homography(bgr)
+    if homography is None:
+        if timing is not None:
+            timing.update({'ocr_sec': 0.0, 'total_sec': time.perf_counter() - started})
+        return [], False, {}
+    rectified = cv2.warpPerspective(bgr, homography, (960, 540),
+                                    borderValue=(150, 150, 150))
+    x0, x1 = 290, 700
+    pages = [rectified[row_y - 53:row_y + 56, x0:x1]
+             for row_y in (145, 275, 405)]
+    ocr_started = time.perf_counter()
+    page_lines = read_ocr_multipage(pages, tesseract, tessdata)
+    ocr = []
+    for item in page_lines:
+        page_index = item['page_num'] - 1
+        if not 0 <= page_index < 3:
+            continue
+        row_y = (145, 275, 405)[page_index]
+        y0 = row_y - 53
+        bx0, by0, bx1, by1 = item['box']
+        ocr.append({'text': item['text'],
+                    'box': [bx0 + x0, by0 + y0, bx1 + x0, by1 + y0],
+                    'confidence': item['confidence']})
+    if timing is not None:
+        timing['ocr_sec'] = time.perf_counter() - ocr_started
+        timing['total_sec'] = time.perf_counter() - started
+    return ocr, True, associate_leds(rectified, ocr)
 
 
 def evaluate(manifest, root, tesseract, tessdata):

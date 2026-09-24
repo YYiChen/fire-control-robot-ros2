@@ -20,7 +20,7 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, PointCloud2, PointField
 from std_msgs.msg import String
 
-from evaluate_panel_perception import infer, marker_homography
+from evaluate_panel_perception import infer_multipage as infer, marker_homography
 
 
 LABEL_TOPICS = {
