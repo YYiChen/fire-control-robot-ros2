@@ -359,3 +359,23 @@ bash ~/stereo_sim/scripts/run_gazebo_perception_capture.sh \
 2026-09-24 五次分别重启 Gazebo 的采集均通过：`fire_on` 三次、`all_on` 一次、`all_off` 一次。每次 640×480 图像都检测到 ArUco 582，文字 3/3、LED 状态 3/3 正确；红/黄/绿各一盏亮时颜色正确，三个灯全灭时均判为 `off`。按钮相对标记的坐标误差分别约 0.00036、0.00076、0.00149 m（各次相同），低于此合成验收的 0.02 m 门槛。实拍诊断帧中标记只有约 47×47 像素，整数角点的约 1 px 误差使外推到整块面板的单应变换偏移；加入 `cornerSubPix` 后行文字回到正确 ROI。停机检查未发现 ROS 域 94 的残留节点或该世界的 Gazebo 服务进程。
 
 这证明的是一张固定、无遮挡的**合成面板纹理**可由 Gazebo 左目话题采集并在受控坐标系中完成 OCR/灯态/二维面板内坐标关联。还没有验证真实面板图像、PP-OCRv5、双目视差生成的按钮深度、按钮投影到 `graph_map`、相机/机器人移动、视角和遮挡变化或统计泛化性能。下一步应把同帧文字框/LED 中心与校正双目视差关联，得到相机坐标 XYZ，再经采集时刻 TF/图优化投影至地图，并与 Gazebo 真值做多距离、多姿态测试。
+
+## OCR / LED 像素关联到双目点云 XYZ
+
+```bash
+source /opt/ros/humble/setup.bash
+bash ~/stereo_sim/scripts/run_stereo_panel_depth_test.sh \
+  ~/stereo_sim_generated/perception_depth_fire fire_on
+bash ~/stereo_sim/scripts/run_stereo_panel_depth_test.sh \
+  ~/stereo_sim_generated/perception_depth_all_on all_on
+bash ~/stereo_sim/scripts/run_stereo_panel_depth_test.sh \
+  ~/stereo_sim_generated/perception_depth_all_off all_off
+```
+
+脚本在隔离的 `ROS_DOMAIN_ID=95` / Gazebo 端口 `11395` 下启动左/右相机、校正与 `/stereo/points2`。感知节点将 ArUco 矫正图中的 LED 中心反变换到左目校正图，在对应 `PointCloud2` 的 13×13 邻域读取有限 XYZ，并取中位数；图像和点云时间戳差必须不超过 25 ms。OCR 最短处理间隔设为 0.75 秒，避免对 30 Hz 图像逐帧启动三次 Tesseract。
+
+具名输出为 `/stereo_panel/fire/pose`、`/stereo_panel/fault/pose`、`/stereo_panel/main_power/pose`，另有 `/stereo_panel/observation` 记录文字、灯态、采集时间、像素、有效点数量和坐标。`PoseStamped.header.frame_id` 是相机光学坐标系 `stereo_left_camera_optical_frame`；输出是**相机坐标**，尚不是机器人地图坐标。
+
+2026-09-24 三种案例各自重启 Gazebo 后均通过 2 cm XYZ 门槛：`fire_on` 正确得到红/灭/灭，`all_on` 正确得到红/黄/绿，`all_off` 三灯均判灭；每个 LED 邻域有 148–152 个有效点，图像和点云时间戳差均为 0。9 个坐标的最大三维误差为 **0.00245 m**。结果 JSON 保存在各自输出目录的 `stereo_panel_depth_report.json`。这是固定距离 0.888 m、无遮挡、平整合成纹理的一组短程仿真测量；0.75 秒是限频设置，尚未测持续吞吐率。
+
+当前完成了**识别标签/灯态 → 图像像素 → 双目点云相机坐标**的关联。下一步需要用该采集时刻的 TF 将点投到 `vo_odom`/`graph_map`，在相机移动、面板转角和不同距离下比较地图坐标；真实面板文字和 PP-OCRv5 也尚未验证。

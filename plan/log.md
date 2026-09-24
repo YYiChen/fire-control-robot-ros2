@@ -282,3 +282,11 @@
 - **validation performed**：WSL ROS2 Humble / Gazebo Classic 实测五次独立启动（`fire_on` 三次、`all_on`、`all_off` 各一次），均由 `/stereo/stereo_rig/left/image_raw` 获取 640×480 非零时间戳图像；五次均文字 3/3、LED 3/3 正确，三个标记局部坐标误差约 0.00036/0.00076/0.00149 m。离线 11 样本回归为 29/29 文字、28/28 灯态、28 个位置样本中位误差 0.001 m，遮挡门控通过、失败列表为空。Windows 源文件与 WSL 实测副本 SHA-256 一致；Python 编译、Shell 语法、SDF/DAE XML 和 `git diff --check` 通过；ROS 域 94 无残留节点且无本世界的 Gazebo 服务进程。
 - **boundary**：数据仍完全合成，Tesseract 不是论文 PP-OCRv5；目前只在一个固定距离/视角把二维面板坐标与标记关联，未做双目视差 XYZ、TF/`graph_map` 投影、运动场景和跨距离/姿态统计，不能据此宣称真实实时语义建图完成。
 - **commit status**：准备仅提交本 target 的 owned 文件；其他未跟踪场景和 `rec.bak` 未纳入。
+
+## 2026-09-24 —— 中文面板语义像素关联双目点云
+
+- **target**：把识别到的面板文字/LED 中心从 ArUco 校正图反变换到校正左目图，在同时间戳组织 `PointCloud2` 邻域取稳健 XYZ，并与独立 Gazebo 面板几何真值比较。
+- **changed areas**：新增限频 OCR/灯态—点云关联节点、隔离 launch / runner / verifier；README 说明输出话题、运行命令和相机坐标限制。点云解析检查 XYZ 字段类型与偏移、步长、大小端、buffer 长度及非有限值。
+- **validation performed**：WSL ROS2 Humble / Gazebo 三个独立案例 `fire_on/all_on/all_off` 均通过，文字 3/3 与相应灯态一致；每个 LED 邻域有 148–152 个有效点，图像/点云时间差为 0，输出 ROS 位姿与图像 stamp 完全对应。9 个相机坐标位置误差中位数 0.00225 m、最大 0.00245 m，低于 0.02 m 门槛。Python/Shell/launch/SDF/DAE 检查、Windows/WSL 源文件哈希对照、`git diff --check` 通过；ROS 域 95 无残留节点且无该场景 Gazebo 服务进程。
+- **boundary**：合成平面、固定 0.888 m 距离与视角；Tesseract 处理限频为至少 0.75 秒，未测持续吞吐率。新位姿在光学相机坐标中，未做动态机器人运动、TF/VO/`graph_map` 投影、真实面板验证或导航动作。
+- **commit status**：准备仅提交本 target owned 文件；未跟踪的其他场景与备份保持未暂存。
