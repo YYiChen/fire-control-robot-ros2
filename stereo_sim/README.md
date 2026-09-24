@@ -322,3 +322,23 @@ source /opt/ros/humble/setup.bash
 随后按 [RTAB-Map 官方 `Grid/3D` 与 `Grid/RayTracing` 参数](https://github.com/introlab/rtabmap/blob/master/corelib/include/rtabmap/core/Parameters.h)在上述隔离图启动中启用 2.5 cm 三维栅格、1.2 m 最大深度。沿用三个 `run_graph_semantic_test.sh` 场景；验证器现在除 `/map` 外，还要求 `/octomap_occupied_space` 有非空三维点、`/octomap_binary` 有非空树数据，且两者坐标系均为 `graph_map`。按钮位置与最近体素用完整 XYZ 距离比较。此 OctoMap 由 RTAB-Map 的图节点及其局部栅格生成，不是旧的 VO-only `octomap_server`。
 
 2026-09-24 WSL 无界面实测：基础场景有 8 次三维点云更新、末次 173 个占据点、8 条 OctoMap 消息；偏航面板有 9 次三维点云更新、末次 267 个占据点、9 条 OctoMap 消息。移动结束时三个按钮距最近三维占据点，基础场景约 0.010/0.012/0.011 m，偏航场景约 0.007/0.010/0.010 m；相应按钮到仿真真值的误差在这些运行中约 0.013–0.029 m。完全遮挡时三个按钮、图节点、三维占据点和 OctoMap 输出均为零。启动日志确认四个 `Grid/*` 参数被图节点采纳。当前处理频率设为 2 Hz，三维图仅在关键位姿更新时发布，不能声称 30 Hz 全图重建或长时间实时性能已达标。仍需真回环后重建一致性、长轨迹/多面板、光照遮挡、语义持久化与真实图像数据验证。
+
+## 消防面板文字与指示灯离线基线（合成域）
+
+这个基线为后续 PaddleOCR 与双目语义地图集成提供**可复跑的输入、真值和评分格式**。它在 WSL 用户目录生成 11 张中文面板图：10 张可定位面板覆盖红/黄/绿/熄灭、弱光、倾斜、反光、灯遮挡和字遮挡，另 1 张遮挡 ArUco。先检测 ArUco 582 并将画面校正到面板坐标，再在固定文字行中运行 Tesseract 中文 OCR；LED 位置由**OCR 实际输出的文字框**向左搜索得到，灯色/亮灭从校正图像像素判定。输出每个灯相对标记的平面三维坐标（z=0），供以后接已有的 `graph_map` 标记位姿。评分时才读取真值，推理代码不使用样本真值。
+
+只需下载并解压 Ubuntu 包到用户目录，不安装系统包、不使用 sudo：
+
+```bash
+mkdir -p ~/stereo_sim_deps/tesseract_pkgs ~/stereo_sim_deps/tesseract_overlay
+cd ~/stereo_sim_deps/tesseract_pkgs
+apt download tesseract-ocr tesseract-ocr-chi-sim tesseract-ocr-eng
+for package in ./*.deb; do
+  dpkg-deb -x "$package" ~/stereo_sim_deps/tesseract_overlay
+done
+bash ~/stereo_sim/scripts/run_panel_perception_baseline.sh
+```
+
+结果在 `~/stereo_sim_generated/panel_perception_baseline/`：`truth.json` 是生成器真值，`report.json` 包含逐样本 OCR 原文、预测灯态、`marker_local_xyz_m`、失败原因和汇总；图片同目录。报告中预测像素坐标属于**校正后的面板图**，真值像素坐标属于**原生成图**，空间误差统一在标记坐标系中比较。负例应满足：`led_occluded` 对“火警”输出 `unknown`，`text_occluded` 不凭空补“火警”，`marker_occluded` 不输出坐标或确定灯态。`position_samples` 是**成功输出坐标且目标可见的条件样本数**，不能只看其中位误差而忽略漏检。
+
+2026-09-24 WSL Tesseract 4.1.1 / OpenCV 4.5.4 一次运行：10 张可定位图中可见文本 29 项识别 27 项（召回 0.931）；可见灯态 28 项中 26 项正确（按所有可见灯计 0.929，包括文字漏检）；遮挡文字未产生“火警”假阳性，遮挡灯没有给出确定灯态；1 张标记遮挡图拒绝输出；26 个输出坐标的标记平面位置误差中位数约 0.0067 m。`tilted_fire` 的“火警”和“主电工作”漏识仍在 `failure_case_ids`，未被隐藏。整组为人工生成、固定字体/布局且使用合成图同一标记尺度，**不能外推真实相机或论文 PP-OCRv5 的性能**。目前还是离线基线，尚未发布实时 ROS 状态或将灯态持久写入图地图。
