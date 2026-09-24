@@ -322,4 +322,4 @@
 - **changed areas**：新增 `docs/open-source-textmap-evaluation.md`；在 `stereo_sim/README.md` 增加结果摘要；更新对应 target plan。上游代码、模型和仿真输出保留在 WSL `~/textmap_evaluation/`，没有写入仓库。未跟踪的 `log/`、两个用户自建 Gazebo 文件及 `rec.bak` 未暂存。
 - **validation performed**：五个隔离 ROS 包构建通过；OpenVINO NavOCR 在单张英文牌和合成中文面板图上完成实测；独立 ROS 域 109 的 RGB-D Gazebo/TextMap 产出 `Exit` 地标及 45×97 栅格图；确认静态建图和源码接口边界。`git diff --check` 已通过，staged 范围将在提交前复核。
 - **boundary**：Nav2 lifecycle 未激活，bridge 未发现 action server；未发送导航目标。地图来自静止单视角重复观察，真实机器人、双目点云输入、动态语义定位及论文 A*/B 样条均未由这组上游项目验证。Nav2 启动根因仍未知。
-- **commit status**：target-only commit and push planned; retain the unresolved Nav2 lifecycle integration for follow-up.
+- **commit status**：target-only commit `65c0d38` pushed to `origin/main`; Nav2 lifecycle integration remains an explicit follow-up item.
