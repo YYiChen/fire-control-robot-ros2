@@ -445,4 +445,4 @@ bash ~/stereo_sim/scripts/run_semantic_ocr_graph_test.sh tf_unavailable
 
 ## 开源文字地标导航对照评估
 
-已在 WSL `~/textmap_evaluation/` 固定提交构建 NavOCR、TextMap、`text_nav_bridge` 与 `text_nav_sim`。静态 RGB-D Gazebo 冒烟测试成功保存 `Exit` 文字地标及二维地图；NavOCR 对合成中文面板只正确识别 32 个可见文字实例中的 11 个；Nav2 lifecycle 未能激活，因此完整文字导航仍未验证。TextMap 只接受深度图，本项目要接入时仍需对齐双目点云和像素/时间戳，并添加最大配对时差门限。详细证据、接口风险和后续步骤见 [开源文字地标导航项目复核](../docs/open-source-textmap-evaluation.md)。
+已在 WSL `~/textmap_evaluation/` 固定提交构建 NavOCR、TextMap、`text_nav_bridge` 与 `text_nav_sim`。静态 RGB-D Gazebo 测试保存了 `Exit` 文字地标及二维地图；NavOCR 对合成中文面板只正确识别 32 个可见文字实例中的 11 个。Nav2 lifecycle 可通过延迟手动激活启动，短程目标可运行；但墙前安全观察位的长程导航在 5 Hz 下虽返回成功仍有约 0.31 m 的 map/odom 位姿差，在 30 Hz 下两次未通过，并出现无有效轨迹、过旧 TF 和车体倾斜。本次 30 Hz 车体是未施加 roll/pitch 平面约束的 stock Burger SDF 副本。另一次无目标的 20 秒静止审计中，30 Hz `/scan`、`/odom` 与 `map→odom` TF 都稳定在约 29–30 Hz，说明静止时序正常；运动失败触发条件仍未定位。30 Hz 尚未证明能改善导航。由于上游 bridge 会把 Exit 目标放得过于靠近墙面，没有发送文字地标导航命令。TextMap 只接受深度图，本项目要接入时仍需对齐双目点云和像素/时间戳，并添加最大配对时差门限。详细证据、接口风险和后续步骤见 [开源文字地标导航项目复核](../docs/open-source-textmap-evaluation.md)。

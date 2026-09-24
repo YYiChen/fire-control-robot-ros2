@@ -323,3 +323,11 @@
 - **validation performed**：五个隔离 ROS 包构建通过；OpenVINO NavOCR 在单张英文牌和合成中文面板图上完成实测；独立 ROS 域 109 的 RGB-D Gazebo/TextMap 产出 `Exit` 地标及 45×97 栅格图；确认静态建图和源码接口边界。`git diff --check` 已通过，staged 范围将在提交前复核。
 - **boundary**：Nav2 lifecycle 未激活，bridge 未发现 action server；未发送导航目标。地图来自静止单视角重复观察，真实机器人、双目点云输入、动态语义定位及论文 A*/B 样条均未由这组上游项目验证。Nav2 启动根因仍未知。
 - **commit status**：target-only commit `65c0d38` pushed to `origin/main`; Nav2 lifecycle integration remains an explicit follow-up item.
+
+## 2026-09-24 —— TextMap/Nav2 运动与 TF 安全门复验
+
+- **target**：沿用开源文字地标评估计划，检查 Nav2 手动 lifecycle 激活、5/30 Hz 激光输入、长程安全观察位及运动期间 TF 时间新鲜度；仅用隔离 Gazebo。
+- **changed areas**：更新 `docs/open-source-textmap-evaluation.md`、`stereo_sim/README.md`、当前 target plan 与本日志；在 WSL `~/textmap_evaluation/harness/` 增加近同步 TF/里程计与静止时序审计脚本，原始结构化记录写入 `~/textmap_evaluation/output/nav2_retest/nav2_retest_20260924.json`。未修改 ROS 安装、`~/ros2_ws`、用户场景或上游 TextMap checkout。
+- **validation performed**：手动延迟激活使两个 lifecycle manager 多次返回成功，controller active 且短程 Nav2 目标可运行。5 Hz 安全观察位 action 返回成功，但同一时间戳 map/odom 相差约 0.309 m，最终 map 位姿距目标约 0.097 m。30 Hz 长程同一目标两次未通过：一次 `ABORTED` 并报无有效轨迹/前方碰撞；另一次 60 秒无 action 结果，途中 TF 与里程计组成位姿严重分离、控制器报 `map→odom` 数据过旧，随后观察到车体倾斜并立即停止仿真。另做 20 秒无目标静止审计，scan/odom/map→odom 分别约 29.27/29.32/30.07 Hz，最大间隔 0.034 s，说明静止时序正常。
+- **boundary**：没有连接实机。Gazebo 模型真值接口不可用，不把 odom 当成绝对真值；测试 SDF 是未限制 roll/pitch 的 stock Burger 副本，静止 TF 正常不能解释运动时的陈旧变换。运动期根因、地图/世界对齐和车体翻滚的先后因果尚未分离；`text_nav_bridge` 的 Exit 命令没有发送，长程安全导航 gate 未通过，plan 保持未完成。
+- **commit status**：pending target-only review/commit; preserve all pre-existing untracked user files.
