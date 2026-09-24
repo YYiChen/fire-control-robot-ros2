@@ -47,6 +47,10 @@ def generate_launch_description():
                 'Mem/STMSize': '5',
                 'Rtabmap/DetectionRate': '2',
                 'RGBD/LinearUpdate': '0.015',
+                'Grid/3D': 'true',
+                'Grid/RayTracing': 'true',
+                'Grid/CellSize': '0.025',
+                'Grid/RangeMax': '1.2',
             }],
             remappings=[
                 ('left/image_rect', '/stereo/left/image_rect'),

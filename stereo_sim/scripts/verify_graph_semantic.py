@@ -3,6 +3,7 @@
 
 from collections import defaultdict
 import argparse
+from itertools import islice
 import math
 import sys
 import time
@@ -12,8 +13,11 @@ from gazebo_msgs.msg import ModelStates
 from gazebo_msgs.srv import SetEntityState
 from geometry_msgs.msg import PoseStamped, Transform
 from nav_msgs.msg import OccupancyGrid
+from octomap_msgs.msg import Octomap
 from rclpy.node import Node
 from rtabmap_msgs.msg import MapGraph
+from sensor_msgs.msg import PointCloud2
+from sensor_msgs_py import point_cloud2
 from tf2_ros import Buffer, TransformListener
 
 from graph_semantic_projector import projected_pose
@@ -50,6 +54,13 @@ class Verifier(Node):
         self.graph = []
         self.maps = []
         self.last_map = None
+        self.cloud3d_messages = 0
+        self.cloud3d_points = []
+        self.cloud3d_frame = None
+        self.cloud3d_records = []
+        self.octomap_messages = 0
+        self.octomap_bytes = 0
+        self.octomap_frame = None
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         for name in BUTTONS:
@@ -62,6 +73,9 @@ class Verifier(Node):
         self.create_subscription(ModelStates, '/model_states', self.on_truth, 10)
         self.create_subscription(MapGraph, '/mapGraph', self.on_graph, 10)
         self.create_subscription(OccupancyGrid, '/map', self.on_map, 10)
+        self.create_subscription(PointCloud2, '/octomap_occupied_space',
+                                 self.on_cloud3d, 10)
+        self.create_subscription(Octomap, '/octomap_binary', self.on_octomap, 10)
         self.move_client = self.create_client(SetEntityState, '/set_entity_state')
 
     def on_pose(self, store, name, msg):
@@ -80,6 +94,19 @@ class Verifier(Node):
     def on_map(self, msg):
         self.last_map = msg
         self.maps.append((msg.info.width, msg.info.height, msg.header.frame_id))
+
+    def on_cloud3d(self, msg):
+        self.cloud3d_messages += 1
+        self.cloud3d_frame = msg.header.frame_id
+        self.cloud3d_points = [(float(point['x']), float(point['y']), float(point['z']))
+                               for point in islice(point_cloud2.read_points(
+                                   msg, field_names=('x', 'y', 'z'), skip_nans=True), 20000)]
+        self.cloud3d_records.append((self.phase, len(self.cloud3d_points)))
+
+    def on_octomap(self, msg):
+        self.octomap_messages += 1
+        self.octomap_bytes = len(msg.data)
+        self.octomap_frame = msg.header.frame_id
 
     def observe(self, seconds):
         deadline = time.monotonic() + seconds
@@ -116,6 +143,11 @@ def nearest_occupied_xy(grid, x, y):
                 for column, row in occupied), default=float('inf'))
 
 
+def nearest_occupied_xyz(points, x, y, z):
+    return min((math.dist(point, (x, y, z)) for point in points),
+               default=float('inf'))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=('base', 'rotated', 'occluded'), default='base')
@@ -134,9 +166,11 @@ def main():
         if args.mode == 'occluded':
             raw_count = sum(len(node.raw['initial'][name]) for name in BUTTONS)
             graph_count = sum(len(node.projected['initial'][name]) for name in BUTTONS)
-            passed = raw_count == 0 and graph_count == 0
+            passed = (raw_count == 0 and graph_count == 0 and
+                      node.cloud3d_messages == 0 and node.octomap_messages == 0)
             print(f'occluded: raw_buttons={raw_count}, graph_buttons={graph_count}, '
-                  f'graph_msgs={len(node.graph)}')
+                  f'graph_msgs={len(node.graph)}, cloud3d_msgs={node.cloud3d_messages}, '
+                  f'octomap_msgs={node.octomap_messages}')
             print('PASS: no hidden button mapped.' if passed else
                   'FAIL: an occluded button was mapped.')
             return 0 if passed else 2
@@ -155,7 +189,12 @@ def main():
         results = {}
         passed = bool(node.graph and node.maps and
                       max(item[0] for item in node.graph) >= 3 and
-                      all(item[2] == 'graph_map' for item in node.maps))
+                      all(item[2] == 'graph_map' for item in node.maps) and
+                      node.cloud3d_messages >= 2 and len(node.cloud3d_points) >= 10 and
+                      any(phase == 'moved' for phase, _count in node.cloud3d_records) and
+                      node.cloud3d_frame == 'graph_map' and
+                      node.octomap_messages >= 1 and node.octomap_bytes > 0 and
+                      node.octomap_frame == 'graph_map')
         for phase in ('initial', 'moved'):
             results[phase] = {}
             for name, y in BUTTONS.items():
@@ -179,7 +218,12 @@ def main():
                     point = recent[-1]
                     result['nearest_map_occupied_m'] = round(
                         nearest_occupied_xy(node.last_map, point[0], point[1]), 4)
+                    result['nearest_3d_occupied_m'] = round(
+                        nearest_occupied_xyz(node.cloud3d_points,
+                                             point[0], point[1], point[2]), 4)
                     if result['nearest_map_occupied_m'] > 0.10:
+                        passed = False
+                    if result['nearest_3d_occupied_m'] > 0.10:
                         passed = False
                 results[phase][name] = result
                 if (len(raw) < 3 or len(recent) < 3 or error > 0.06 or
@@ -191,10 +235,13 @@ def main():
         passed = passed and tf_ok
         print(f'graph_semantic: {results}; graph_msgs={len(node.graph)}, '
               f'graph_nodes={max((item[0] for item in node.graph), default=0)}, '
-              f'map_msgs={len(node.maps)}, tf_ok={tf_ok}, '
+              f'map_msgs={len(node.maps)}, cloud3d_msgs={node.cloud3d_messages}, '
+              f'cloud3d_points={len(node.cloud3d_points)}, '
+              f'octomap_msgs={node.octomap_messages}, octomap_bytes={node.octomap_bytes}, '
+              f'tf_ok={tf_ok}, '
               f'truth_final={node.truth[-1] if node.truth else None}')
-        print('PASS: button detections reproject into graph coordinates.' if passed else
-              'INCOMPLETE: graph semantic coordinate evidence missing.')
+        print('PASS: graph-frame buttons align with 2D and 3D occupancy.' if passed else
+              'INCOMPLETE: graph semantic or 3D occupancy evidence missing.')
         return 0 if passed else 2
     finally:
         node.destroy_node()

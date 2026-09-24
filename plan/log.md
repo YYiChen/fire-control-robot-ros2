@@ -250,3 +250,11 @@
 - **validation performed**：Windows/WSL 代码同步后，Python 编译、Shell 语法、90° 旋转/时间戳数学断言通过。WSL Humble 隔离无界面三场景通过：基础与偏航场景运动后均有 8 个以上图节点、二维占据图和三按钮图坐标；最终按钮真值误差从约 1 mm 到 33 mm（不同运行），到最近地图占据格约 1–3.4 cm。遮挡场景原始/图按钮输出均为 0；过滤前有 VO 丢失 NaN TF 警告，过滤后无该警告。旧 VO→按钮→OctoMap→接近路径回归仍通过，地图已知空闲格 216→350，路径 7 路点。
 - **boundary**：测试器经 Gazebo 服务移动相机，目标颜色/ArUco 为理想数据。图地标仅应用最新全局修正，未作为 RTAB 图约束；实际全局回环、长轨迹局部图变形、图校正的三维占据图、真实 OCR/灯态与机器人按压尚未验证。短程厘米内误差不是机械按压精度保证。
 - **commit status**：本 target 文件经最终 Git 检查后提交并同步。
+
+## 2026-09-24 —— 图支路三维占据图与按钮对齐
+
+- **target**：验证双目 RTAB-Map 图支路可输出实际三维 OctoMap，并让相同 `graph_map` 中的按钮三维位置与占据体素比较。
+- **changed areas**：隔离图节点启用 `Grid/3D=true`、`Grid/RayTracing=true`、2.5 cm 栅格和 1.2 m 深度；三场景验证器订阅非空 `/octomap_occupied_space` 与 `/octomap_binary`、检查坐标系和按钮 XYZ 最近点距离。
+- **validation performed**：启动日志确认 Grid 参数被采纳。WSL Humble 基础/偏航场景分别有 8/9 次三维点云更新、末次 173/267 个占据点、8/9 条非空 OctoMap；按钮到最近占据点分别约 0.010–0.012 m 与 0.007–0.010 m。遮挡负例按钮和三维地图消息均为 0。Python 编译、Shell/Git 检查见结项。验证器首轮因 Humble 结构化点云元素不可按元组切片而退出，按 x/y/z 字段读取后完整三场景通过。
+- **boundary**：图建图约 2 Hz 处理，三维地图随关键位姿发布；只验证短程理想面板，没有全局回环后多局部地图重组、长程漂移、真实 OCR/LED 或机器人动作。厘米级体素距离不是按钮按压精度。
+- **commit status**：本 target 文件经目标复审与检查后提交；GitHub 推送使用本次系统代理的临时 Git 参数。
