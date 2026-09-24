@@ -330,4 +330,4 @@
 - **changed areas**：更新 `docs/open-source-textmap-evaluation.md`、`stereo_sim/README.md`、当前 target plan 与本日志；在 WSL `~/textmap_evaluation/harness/` 增加近同步 TF/里程计与静止时序审计脚本，原始结构化记录写入 `~/textmap_evaluation/output/nav2_retest/nav2_retest_20260924.json`。未修改 ROS 安装、`~/ros2_ws`、用户场景或上游 TextMap checkout。
 - **validation performed**：手动延迟激活使两个 lifecycle manager 多次返回成功，controller active 且短程 Nav2 目标可运行。5 Hz 安全观察位 action 返回成功，但同一时间戳 map/odom 相差约 0.309 m，最终 map 位姿距目标约 0.097 m。30 Hz 长程同一目标两次未通过：一次 `ABORTED` 并报无有效轨迹/前方碰撞；另一次 60 秒无 action 结果，途中 TF 与里程计组成位姿严重分离、控制器报 `map→odom` 数据过旧，随后观察到车体倾斜并立即停止仿真。另做 20 秒无目标静止审计，scan/odom/map→odom 分别约 29.27/29.32/30.07 Hz，最大间隔 0.034 s，说明静止时序正常。
 - **boundary**：没有连接实机。Gazebo 模型真值接口不可用，不把 odom 当成绝对真值；测试 SDF 是未限制 roll/pitch 的 stock Burger 副本，静止 TF 正常不能解释运动时的陈旧变换。运动期根因、地图/世界对齐和车体翻滚的先后因果尚未分离；`text_nav_bridge` 的 Exit 命令没有发送，长程安全导航 gate 未通过，plan 保持未完成。
-- **commit status**：pending target-only review/commit; preserve all pre-existing untracked user files.
+- **commit status**：target-only commit `b8a4a77` pushed to `origin/main`; preserve all pre-existing untracked user files.
