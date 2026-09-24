@@ -315,3 +315,11 @@
 - **source audit**：工控机归档有 C++ 检测/裁剪/识别和最多 6 框批处理代码、PP-OCRv3 detector/recognizer/字符表；CMake 使用 OpenVINO，WSL 未检测到 Paddle/PaddleOCR Python 包或 OpenVINO 动态库缓存。它不是可直接启动的 ROS2 Humble OCR 节点，也不是论文 PP-OCRv5 模型。官方 PaddleOCR 有 Linux C++ 本地部署文档和 PP-OCRv5 C++ 支持，可作为后续隔离对照方向。
 - **boundary**：这是合成图、Gazebo 固定面板的处理时延/结果一致性验证；不代表真实图像泛化、不代表工控机性能；30 条姿态重复来自同一个 Gazebo 进程，且处理仍以 0.75 s 间隔限频。输出 JSON 和失败帧仅存 WSL `~/stereo_sim_generated/panel_ocr_batch_benchmark_20260924/report_v4.json`、`panel_pose_sweep_multipage_diagnostic_20260924/` 与三个 `depth_multipage_*` 目录。
 - **commit status**：已提交，仅含本 target owned files；生成报告/图像和用户已有未跟踪文件未提交。
+
+## 2026-09-24 —— 开源文字地标导航基线复核
+
+- **target**：审阅并在隔离 WSL 环境试跑 NavOCR、TextMap、`text_nav_bridge`、`text_nav_sim` 的文字地标建图/导航流程，比较它们与当前双目消防面板链路的接口。
+- **changed areas**：新增 `docs/open-source-textmap-evaluation.md`；在 `stereo_sim/README.md` 增加结果摘要；更新对应 target plan。上游代码、模型和仿真输出保留在 WSL `~/textmap_evaluation/`，没有写入仓库。未跟踪的 `log/`、两个用户自建 Gazebo 文件及 `rec.bak` 未暂存。
+- **validation performed**：五个隔离 ROS 包构建通过；OpenVINO NavOCR 在单张英文牌和合成中文面板图上完成实测；独立 ROS 域 109 的 RGB-D Gazebo/TextMap 产出 `Exit` 地标及 45×97 栅格图；确认静态建图和源码接口边界。`git diff --check` 已通过，staged 范围将在提交前复核。
+- **boundary**：Nav2 lifecycle 未激活，bridge 未发现 action server；未发送导航目标。地图来自静止单视角重复观察，真实机器人、双目点云输入、动态语义定位及论文 A*/B 样条均未由这组上游项目验证。Nav2 启动根因仍未知。
+- **commit status**：target-only commit and push planned; retain the unresolved Nav2 lifecycle integration for follow-up.

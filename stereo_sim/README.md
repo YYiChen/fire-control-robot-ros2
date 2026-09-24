@@ -442,3 +442,7 @@ bash ~/stereo_sim/scripts/run_semantic_ocr_graph_test.sh tf_unavailable
 2026-09-24 隔离实测：无遮挡案例中 RTAB-Map 建立 8 个图节点；相机总位移 0.1118 m 后，三个按钮相对独立对齐的场景真值误差最大 0.00493 m，初始到移动后的地图漂移最大 0.00427 m。初始误差最大 0.00245 m。`graph_map` 原点通过相机初始 Gazebo 位姿与同时间 TF 独立对齐到 SDF 世界；本轮对齐为平移/旋转均接近零。ArUco 遮挡时相机、VO、图地图输出数量均为 0；缺失 TF 注入 8 条输入后报告 `waiting_for_tf`，VO/图地图输出均为 0。旧 `run_graph_semantic_test.sh base` 回归通过（8 个图节点；三个按钮移动阶段到场景真值中位误差 5.7、8.0、10.0 mm）。结果 JSON 和日志保存在各自 `~/stereo_sim_generated/semantic_ocr_graph_{base,occluded,tf_unavailable}/` 目录下。
 
 这证明了**固定、无遮挡合成面板在短程相机移动中**，OCR/LED 像素关联的双目点可以经过采集时 TF 与 RTAB-Map 全局校正进入同一 `graph_map`，并且遮挡/缺 TF 时会拒绝输出。真实面板图像、论文 PP-OCRv5、长轨迹回环后的局部地图重整、语义地标参与图优化和机械臂按压尚未验证。投影节点对地标应用一个全局 `map_to_odom` 变换，无法表达长轨迹图优化带来的局部非刚性变化。
+
+## 开源文字地标导航对照评估
+
+已在 WSL `~/textmap_evaluation/` 固定提交构建 NavOCR、TextMap、`text_nav_bridge` 与 `text_nav_sim`。静态 RGB-D Gazebo 冒烟测试成功保存 `Exit` 文字地标及二维地图；NavOCR 对合成中文面板只正确识别 32 个可见文字实例中的 11 个；Nav2 lifecycle 未能激活，因此完整文字导航仍未验证。TextMap 只接受深度图，本项目要接入时仍需对齐双目点云和像素/时间戳，并添加最大配对时差门限。详细证据、接口风险和后续步骤见 [开源文字地标导航项目复核](../docs/open-source-textmap-evaluation.md)。
