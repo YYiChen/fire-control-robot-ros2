@@ -99,9 +99,15 @@ class SemanticPanelNode(Node):
         self.declare_parameter('camera_frame', 'stereo_left_camera_optical_frame')
         self.declare_parameter('minimum_depth_pixels', 8)
         self.declare_parameter('pose_source', 'gazebo')
+        self.declare_parameter('pose_frame_id', 'map')
+        self.declare_parameter('publish_pose_tf', True)
         self.pose_source = self.get_parameter('pose_source').value
+        self.pose_frame_id = self.get_parameter('pose_frame_id').value
+        self.publish_pose_tf = self.get_parameter('publish_pose_tf').value
         if self.pose_source not in ('gazebo', 'odometry'):
             raise ValueError('pose_source must be gazebo or odometry')
+        if not self.pose_frame_id:
+            raise ValueError('pose_frame_id must be nonempty')
         self.bridge = CvBridge()
         self.images = deque(maxlen=15)
         self.disparities = deque(maxlen=15)
@@ -157,13 +163,19 @@ class SemanticPanelNode(Node):
     def on_odom(self, msg):
         if msg.header.frame_id != 'vo_odom' or msg.child_frame_id != 'stereo_base_link':
             return
+        p = msg.pose.pose.position
+        q = msg.pose.pose.orientation
+        values = (p.x, p.y, p.z, q.x, q.y, q.z, q.w)
+        norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w
+        if not all(math.isfinite(value) for value in values) or not 0.9 <= norm <= 1.1:
+            return
         self.odometry.append(msg)
         rig = msg.pose.pose
-        q = rig.orientation
-        self.publish_camera_tf(
-            msg.header.stamp,
-            (rig.position.x, rig.position.y, rig.position.z),
-            (q.x, q.y, q.z, q.w), 'stereo_base_link')
+        if self.publish_pose_tf:
+            self.publish_camera_tf(
+                msg.header.stamp,
+                (rig.position.x, rig.position.y, rig.position.z),
+                (q.x, q.y, q.z, q.w), 'stereo_base_link')
         self.try_pair()
 
     def on_image(self, msg):
@@ -303,7 +315,7 @@ class SemanticPanelNode(Node):
             rig.position.x + camera_offset[0],
             rig.position.y + camera_offset[1],
             rig.position.z + camera_offset[2])
-        if self.pose_source == 'gazebo':
+        if self.pose_source == 'gazebo' and self.publish_pose_tf:
             self.publish_camera_tf(image.header.stamp, camera_origin,
                                    quat_multiply(q_rig, optical_to_model_quat()), frame)
         if marker is not None:
@@ -313,7 +325,7 @@ class SemanticPanelNode(Node):
             marker_world = tuple(camera_origin[i] + p_rotated[i] for i in range(3))
             marker_pose = PoseStamped()
             marker_pose.header.stamp = image.header.stamp
-            marker_pose.header.frame_id = 'map'
+            marker_pose.header.frame_id = self.pose_frame_id
             marker_pose.pose.position.x, marker_pose.pose.position.y, marker_pose.pose.position.z = marker_world
             marker_quat = quat_multiply(
                 quat_multiply(q_rig, optical_to_model_quat()),
@@ -347,7 +359,8 @@ class SemanticPanelNode(Node):
             panel_tf.child_frame_id = 'panel_marker_582'
             panel_tf.transform.translation.x, panel_tf.transform.translation.y, panel_tf.transform.translation.z = marker_world
             panel_tf.transform.rotation = marker_pose.pose.orientation
-            self.tf_broadcaster.sendTransform(panel_tf)
+            if self.publish_pose_tf:
+                self.tf_broadcaster.sendTransform(panel_tf)
             cv2.polylines(bgr, [marker_corners.astype(np.int32)], True, (0, 255, 255), 2)
             normal = rotate(marker_quat, (0.0, 0.0, 1.0))
             statuses['aruco_582'] = {
@@ -410,7 +423,7 @@ class SemanticPanelNode(Node):
                                     np.median(np.asarray(samples), axis=0))
             pose = PoseStamped()
             pose.header.stamp = image.header.stamp
-            pose.header.frame_id = 'map'
+            pose.header.frame_id = self.pose_frame_id
             (pose.pose.position.x, pose.pose.position.y,
              pose.pose.position.z) = stable_position
             pose.pose.orientation.w = 1.0
@@ -449,7 +462,7 @@ class SemanticPanelNode(Node):
     def publish_camera_tf(self, stamp, origin, orientation, child_frame):
         transform = TransformStamped()
         transform.header.stamp = stamp
-        transform.header.frame_id = 'map'
+        transform.header.frame_id = self.pose_frame_id
         transform.child_frame_id = child_frame
         transform.transform.translation.x = origin[0]
         transform.transform.translation.y = origin[1]
@@ -463,6 +476,7 @@ class SemanticPanelNode(Node):
             return
         message = String()
         message.data = json.dumps({'stamp': round(stamp, 6), 'state': state,
+                                   'coordinate_frame': self.pose_frame_id,
                                    'buttons': buttons}, sort_keys=True)
         self.status_publisher.publish(message)
         self.last_status_time = stamp

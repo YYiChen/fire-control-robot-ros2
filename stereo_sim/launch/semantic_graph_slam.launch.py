@@ -53,6 +53,15 @@ def generate_launch_description():
                 ('right/image_rect', '/stereo/right/image_rect'),
                 ('left/camera_info', '/vo/left/camera_info'),
                 ('right/camera_info', '/stereo/stereo_rig/right/camera_info'),
-                ('odom', '/vo/odom'),
+                ('odom', '/graph/vo_odom'),
             ]),
+        ExecuteProcess(
+            cmd=[sys.executable, str(root / 'scripts' / 'semantic_panel_node.py'),
+                 '--ros-args', '-p', 'use_sim_time:=true', '-p', 'pose_source:=odometry',
+                 '-p', 'pose_frame_id:=vo_odom', '-p', 'publish_pose_tf:=false'],
+            output='screen'),
+        ExecuteProcess(
+            cmd=[sys.executable, str(root / 'scripts' / 'graph_semantic_projector.py'),
+                 '--ros-args', '-p', 'use_sim_time:=true'],
+            output='screen'),
     ])

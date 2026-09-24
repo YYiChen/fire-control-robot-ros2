@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Publish the exact VO odom-to-base transform for graph-SLAM TF lookups."""
 
+import math
+
 import rclpy
 from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
@@ -13,6 +15,8 @@ class VisualOdomTF(Node):
     def __init__(self):
         super().__init__('visual_odom_tf')
         self.broadcaster = TransformBroadcaster(self)
+        self.valid_odom_publisher = self.create_publisher(
+            Odometry, '/graph/vo_odom', qos_profile_sensor_data)
         self.create_subscription(Odometry, '/vo/odom', self.on_odom,
                                  qos_profile_sensor_data)
 
@@ -20,10 +24,16 @@ class VisualOdomTF(Node):
         if (msg.header.frame_id != 'vo_odom' or
                 msg.child_frame_id != 'stereo_base_link'):
             return
+        p = msg.pose.pose.position
+        q = msg.pose.pose.orientation
+        values = (p.x, p.y, p.z, q.x, q.y, q.z, q.w)
+        norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w
+        if not all(math.isfinite(value) for value in values) or not 0.9 <= norm <= 1.1:
+            return
+        self.valid_odom_publisher.publish(msg)
         transform = TransformStamped()
         transform.header = msg.header
         transform.child_frame_id = msg.child_frame_id
-        p = msg.pose.pose.position
         transform.transform.translation.x = p.x
         transform.transform.translation.y = p.y
         transform.transform.translation.z = p.z
