@@ -258,3 +258,11 @@
 - **validation performed**：启动日志确认 Grid 参数被采纳。WSL Humble 基础/偏航场景分别有 8/9 次三维点云更新、末次 173/267 个占据点、8/9 条非空 OctoMap；按钮到最近占据点分别约 0.010–0.012 m 与 0.007–0.010 m。遮挡负例按钮和三维地图消息均为 0。Python 编译、Shell/Git 检查见结项。验证器首轮因 Humble 结构化点云元素不可按元组切片而退出，按 x/y/z 字段读取后完整三场景通过。
 - **boundary**：图建图约 2 Hz 处理，三维地图随关键位姿发布；只验证短程理想面板，没有全局回环后多局部地图重组、长程漂移、真实 OCR/LED 或机器人动作。厘米级体素距离不是按钮按压精度。
 - **commit status**：本 target 文件经目标复审与检查后提交；GitHub 推送使用本次系统代理的临时 Git 参数。
+
+## 2026-09-24 —— 消防面板视觉复现证据审计
+
+- **target**：核对论文 OCR/LED 方案、工控机归档源码模型和当前双目仿真感知链，定义真实面板识别进入三维语义地图前的实验门槛。
+- **changed areas**：新增 `docs/panel-perception-reproducibility-audit.md` 与本 target plan；未修改源码、模型、实机或未跟踪的其他工作文件。
+- **validation performed**：清点归档中的图像/标注/模型路径，逐项核对论文第 4 章、OCR launch、LED 解析和双目语义节点；WSL 只读检查确认 OpenCV 可用、Python PaddleOCR/OpenVINO/pip 当前缺失；Git diff/status 在提交前复核。
+- **boundary**：论文描述的是 500 张有效真实图像及 PP-OCRv5 微调，当前归档仅有 v3 推理模型且未检出图像/标注；源码风险尚为静态审查，不是运行时缺陷率。现阶段不能宣称论文面板识别已复现。
+- **commit status**：本 target 的 plan、报告与 log 条目单独提交；是否推送远端在提交后核对。
