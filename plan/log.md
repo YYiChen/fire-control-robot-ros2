@@ -290,3 +290,11 @@
 - **validation performed**：WSL ROS2 Humble / Gazebo 三个独立案例 `fire_on/all_on/all_off` 均通过，文字 3/3 与相应灯态一致；每个 LED 邻域有 148–152 个有效点，图像/点云时间差为 0，输出 ROS 位姿与图像 stamp 完全对应。9 个相机坐标位置误差中位数 0.00225 m、最大 0.00245 m，低于 0.02 m 门槛。Python/Shell/launch/SDF/DAE 检查、Windows/WSL 源文件哈希对照、`git diff --check` 通过；ROS 域 95 无残留节点且无该场景 Gazebo 服务进程。
 - **boundary**：合成平面、固定 0.888 m 距离与视角；Tesseract 处理限频为至少 0.75 秒，未测持续吞吐率。新位姿在光学相机坐标中，未做动态机器人运动、TF/VO/`graph_map` 投影、真实面板验证或导航动作。
 - **commit status**：准备仅提交本 target owned 文件；未跟踪的其他场景与备份保持未暂存。
+
+## 2026-09-24 —— 双目 OCR 地标投影到图地图
+
+- **target**：把 OCR/LED 关联得到的相机光学坐标按采集时间转换到 `vo_odom`，再应用 RTAB-Map 图校正投到 `graph_map`；用相机移动和失效注入验证空间对应关系。
+- **changed areas**：新增隔离 TF/图校正投影器、专用 RTAB-Map 启动、固定合成面板世界、运动/遮挡/缺失 TF runner 与验收器；每次测试使用独立数据库；README 记录坐标话题、运行命令和实测边界。旧彩色按钮投影节点未修改。
+- **validation performed**：Windows/WSL Python 编译、launch Python 编译、Shell 语法、SDF XML 与 `git diff --check` 通过。纯旋转/平移与时间戳断言通过。新数据库无界面基准运行中 RTAB-Map 建立 8 个节点，相机位移 0.1118 m 后三个语义点图坐标真值最大误差 0.00493 m、相对初始漂移最大 0.00427 m；遮挡案例相机/VO/图地图输出均为 0；缺失坐标系故障注入 8 条点输入、报告 `waiting_for_tf`，VO/图地图输出均为 0。旧图语义 base 回归通过（8 节点；三个按钮移动阶段中位真值误差 5.7/8.0/10.0 mm）；OCR 点云 base 回归通过，最大相机坐标误差 0.00245 m。实测报告留在 WSL `~/stereo_sim_generated/`，未加入仓库。
+- **boundary**：固定 0.888 m、无遮挡合成面板及短程 Gazebo 相机位姿移动；不是实机轮式运动。点坐标经同时间 TF 和全局 `map_to_odom`，没有将地标纳入图优化，也不能表达长轨迹图优化的局部非刚性校正；真实面板、PP-OCRv5、长程回环与操作未验证。纯变换测试曾抓到四元数乘法标量项索引错误，修正后全量目标案例通过。
+- **commit status**：committed (target-only commit)。

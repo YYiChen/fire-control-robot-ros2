@@ -378,4 +378,33 @@ bash ~/stereo_sim/scripts/run_stereo_panel_depth_test.sh \
 
 2026-09-24 三种案例各自重启 Gazebo 后均通过 2 cm XYZ 门槛：`fire_on` 正确得到红/灭/灭，`all_on` 正确得到红/黄/绿，`all_off` 三灯均判灭；每个 LED 邻域有 148–152 个有效点，图像和点云时间戳差均为 0。9 个坐标的最大三维误差为 **0.00245 m**。结果 JSON 保存在各自输出目录的 `stereo_panel_depth_report.json`。这是固定距离 0.888 m、无遮挡、平整合成纹理的一组短程仿真测量；0.75 秒是限频设置，尚未测持续吞吐率。
 
-当前完成了**识别标签/灯态 → 图像像素 → 双目点云相机坐标**的关联。下一步需要用该采集时刻的 TF 将点投到 `vo_odom`/`graph_map`，在相机移动、面板转角和不同距离下比较地图坐标；真实面板文字和 PP-OCRv5 也尚未验证。
+当前已完成**识别标签/灯态 → 图像像素 → 双目点云相机坐标**的关联。坐标投到 `vo_odom`/`graph_map` 的仿真验证见下文“中文 OCR 地标投影到图地图”；真实面板文字和 PP-OCRv5 仍未验证。
+
+## 中文 OCR 地标投影到图地图
+
+在 WSL 中先把 Windows 项目目录同步到 `~/stereo_sim`，再运行固定场景与遮挡负例：
+
+```bash
+cp -au "/mnt/c/Users/32126/Desktop/Leeds Homework/Semester 5/科研/ROS/stereo_sim/." "$HOME/stereo_sim/"
+source /opt/ros/humble/setup.bash
+bash ~/stereo_sim/scripts/run_semantic_ocr_graph_test.sh base
+bash ~/stereo_sim/scripts/run_semantic_ocr_graph_test.sh occluded
+bash ~/stereo_sim/scripts/run_semantic_ocr_graph_test.sh tf_unavailable
+```
+
+这条隔离支路使用 `ROS_DOMAIN_ID=96/97/98`，Gazebo 端口 `11396/11397`。`base` 会在固定的合成面板前启动双目相机与 RTAB-Map，采集初始结果后通过 Gazebo 服务让相机前进 0.10 m、横移 0.05 m；每次都使用新的 RTAB-Map 数据库。机器人与真实硬件均不参与。`occluded` 使用 ArUco 标记遮挡案例，检查相机、VO、图地图三层都没有按钮点输出。`tf_unavailable` 不启动 Gazebo，而是注入一个不存在坐标系的相机点，检查 TF 未就绪时不会输出 VO 或地图地标。
+
+坐标链为：
+
+| 话题 | 坐标系 | 用途 |
+|---|---|---|
+| `/stereo_panel/{fire,fault,main_power}/pose` | 相机光学坐标 | 双目点云采样得到的按钮三维点 |
+| `/semantic_panel/ocr/{fire,fault,main_power}/pose` | `vo_odom` | 按检测图像时间，经 TF 转换后的局部里程计点 |
+| `/graph_semantic_panel/ocr/{fire,fault,main_power}/pose` | `graph_map` | 将 VO 点应用 RTAB-Map 最新 `map_to_odom` 校正后的图地图点 |
+| `/graph_semantic_panel/ocr/status` | JSON 状态 | 报告 TF 等待、图校正新鲜度及地标新鲜/缓存状态 |
+
+每次转换沿用原图像采集时间戳。缺少对应时刻的 TF 时会等待；没有新鲜的 RTAB-Map 图校正时不发布 `graph_map` 点。报告保存在 `~/stereo_sim_generated/semantic_ocr_graph_{base,occluded,tf_unavailable}/semantic_ocr_graph_report.json`，启动日志保存在同目录的 `logs/`。移动验收要求三个地标都留在合成模型真值 6 cm 内，初始到移动后的地图漂移不超过 4 cm，并要求图中至少有 3 个节点。
+
+2026-09-24 隔离实测：无遮挡案例中 RTAB-Map 建立 8 个图节点；相机总位移 0.1118 m 后，三个按钮相对独立对齐的场景真值误差最大 0.00493 m，初始到移动后的地图漂移最大 0.00427 m。初始误差最大 0.00245 m。`graph_map` 原点通过相机初始 Gazebo 位姿与同时间 TF 独立对齐到 SDF 世界；本轮对齐为平移/旋转均接近零。ArUco 遮挡时相机、VO、图地图输出数量均为 0；缺失 TF 注入 8 条输入后报告 `waiting_for_tf`，VO/图地图输出均为 0。旧 `run_graph_semantic_test.sh base` 回归通过（8 个图节点；三个按钮移动阶段到场景真值中位误差 5.7、8.0、10.0 mm）。结果 JSON 和日志保存在各自 `~/stereo_sim_generated/semantic_ocr_graph_{base,occluded,tf_unavailable}/` 目录下。
+
+这证明了**固定、无遮挡合成面板在短程相机移动中**，OCR/LED 像素关联的双目点可以经过采集时 TF 与 RTAB-Map 全局校正进入同一 `graph_map`，并且遮挡/缺 TF 时会拒绝输出。真实面板图像、论文 PP-OCRv5、长轨迹回环后的局部地图重整、语义地标参与图优化和机械臂按压尚未验证。投影节点对地标应用一个全局 `map_to_odom` 变换，无法表达长轨迹图优化带来的局部非刚性变化。
